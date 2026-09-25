@@ -34,3 +34,20 @@ Implementation completion, independent validation, review approval, protected-br
 ## Destructive/high-impact actions
 
 Local worker state is intentionally replaceable, but destructive hardware operations and authoritative external operations require explicit gates appropriate to blast radius. Examples include flashing/wiping devices, deleting remote branches/repositories, force pushes, production/database/cloud/DNS changes, credential expansion/rotation, and deletion of backups/authoritative state.
+
+## Runtime execution scope
+
+The worker requires an explicit `[authorization]` mode before serving. Standalone
+mode uses exact operator-configured repository identities. Managed mode rereads
+a root-owned, non-worker-writable grant (including protected ancestor directories)
+with schema version, matching worker ID, active status, UTC expiry, and exact
+repository scopes. Missing, expired, revoked, malformed, or mismatched grants
+fail closed; Git credential access is insufficient. No wildcard matching is used.
+
+Authority is checked before workspace preparation, before provider execution, and
+before publication. Revocation observed after execution preserves unpublished
+work. In-flight execution remains bounded by its provider deadline; instantaneous
+remote revocation/cancellation requires the future authenticated CIC transport.
+The root-installed grant is a local compatibility boundary, not a completed CIC
+enrollment protocol or proof of server trust. Task credential isolation remains
+a separate requirement.

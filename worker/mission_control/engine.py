@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import uuid4
 
+from .authorization import AuthorizationError
 from .claims import Claim, ClaimConflict, ClaimStore
 from .discovery import GitTaskSource
 from .durable_state import DurableStateStore, OperationalState
@@ -146,6 +147,8 @@ class WorkerEngine:
                 executor = self.executor_factory(active) if self.executor_factory else self.executor
                 assert executor is not None
                 outcome = executor.execute(active)
+            except AuthorizationError as exc:
+                outcome = ExecutionOutcome(ExecutionStatus.BLOCKED, str(exc))
             except Exception:
                 outcome = ExecutionOutcome(ExecutionStatus.TASK_FAILURE, "executor raised an exception")
             if isinstance(outcome, ExecutionOutcome):

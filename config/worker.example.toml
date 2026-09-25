@@ -21,3 +21,11 @@ author_email = "worker@localhost.invalid"
 # Operator-selected maximum duration for each provider invocation.
 # Required before serve; select this for the work rather than copying blindly.
 execution_timeout_seconds = 900
+
+[authorization]
+# Select an explicit mode and exact repositories before enabling execution.
+mode = "standalone"
+repositories = []
+# Managed mode instead requires a root-installed, expiring grant:
+# mode = "managed"
+# grant_path = "/etc/vincent/authorization.json"

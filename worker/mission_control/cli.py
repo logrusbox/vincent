@@ -9,6 +9,7 @@ import signal
 from threading import Event
 from pathlib import Path
 
+from .authorization import ExecutionAuthority
 from .configuration import ConfigurationError, WorkerConfiguration
 from .durable_state import DurableStateStore, recovery_action
 from .enrollment import EnrollmentError, initialize_identity, request_enrollment
@@ -39,6 +40,7 @@ def doctor(configuration: WorkerConfiguration) -> tuple[bool, dict]:
     )
     checks = {
         "worker_id": configuration.worker_id,
+        "authority_configured": configuration.authority_mode in ("standalone", "managed"),
         "provider_bound_configured": configuration.provider_timeout_seconds is not None,
         "git_available": shutil.which("git") is not None,
         "codex_available": shutil.which("codex") is not None,
@@ -47,7 +49,7 @@ def doctor(configuration: WorkerConfiguration) -> tuple[bool, dict]:
         "coordination_checkout_valid": coordination_checkout_valid,
         "recovery_action": recovery_action(state).value,
     }
-    return all((checks["provider_bound_configured"], checks["git_available"], checks["codex_available"], checks["workspace_root_absolute"], identity_matches, coordination_checkout_valid)), checks
+    return all((checks["authority_configured"], checks["provider_bound_configured"], checks["git_available"], checks["codex_available"], checks["workspace_root_absolute"], identity_matches, coordination_checkout_valid)), checks
 
 
 def parser() -> argparse.ArgumentParser:
@@ -104,6 +106,8 @@ def main(argv: list[str] | None = None) -> int:
         configuration.worker_id,
         WorkspaceManager(configuration.workspace_root),
         create_provider("codex", timeout_seconds=configuration.provider_timeout_seconds, cancel=stop),
+        authority=ExecutionAuthority(configuration.worker_id, configuration.authority_mode,
+            configuration.authorized_repositories, configuration.authorization_file),
         git_author_name=configuration.git_author_name,
         git_author_email=configuration.git_author_email,
     )

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .authorization import AuthorizationError, ExecutionAuthority
 from .provider import Provider, ValidatedProviderExecutor
 from .execution import ExecutionOutcome, ExecutionStatus
 from .models import Task
@@ -17,12 +18,23 @@ class ProjectTaskExecutor:
     task: Task
     prepared: PreparedWorkspace
     provider: ValidatedProviderExecutor
+    authority: ExecutionAuthority
     publication: PublicationResult | None = None
 
     def execute(self, task: Task) -> ExecutionOutcome:
+        try:
+            if task != self.task:
+                raise AuthorizationError("executor task identity changed")
+            self.authority.require(task)
+        except AuthorizationError as exc:
+            return ExecutionOutcome(ExecutionStatus.BLOCKED, str(exc))
         outcome = self.provider.execute(task)
         if outcome.status is not ExecutionStatus.SUCCESS:
             return outcome
+        try:
+            self.authority.require(task)
+        except AuthorizationError as exc:
+            return ExecutionOutcome(ExecutionStatus.BLOCKED, str(exc))
         publisher = GitPublisher(self.prepared.path)
         changed = publisher._git("status", "--porcelain=v1", "--untracked-files=all").stdout.strip()
         if not changed:
@@ -46,8 +58,9 @@ class ProjectTaskExecutor:
 
 
 class ProjectExecutorFactory:
-    def __init__(self, worker_id: str, workspaces: WorkspaceManager, runner: Provider, *, git_author_name: str = "Mission Control Worker", git_author_email: str = "worker@localhost.invalid") -> None:
+    def __init__(self, worker_id: str, workspaces: WorkspaceManager, runner: Provider, *, authority: ExecutionAuthority | None = None, git_author_name: str = "Mission Control Worker", git_author_email: str = "worker@localhost.invalid") -> None:
         self.worker_id = worker_id
+        self.authority = authority or ExecutionAuthority(worker_id, "unconfigured")
         self.workspaces = workspaces
         self.runner = runner
         self.git_author_name = git_author_name
@@ -55,6 +68,7 @@ class ProjectExecutorFactory:
         self.last_executor: ProjectTaskExecutor | None = None
 
     def __call__(self, task: Task) -> ProjectTaskExecutor:
+        self.authority.require(task)
         prepared = self.workspaces.prepare(
             project_id=task.project_id,
             repository=task.repository,
@@ -69,5 +83,5 @@ class ProjectExecutorFactory:
         GitPublisher(prepared.path)._git("config", "user.name", self.git_author_name)
         GitPublisher(prepared.path)._git("config", "user.email", self.git_author_email)
         provider = ValidatedProviderExecutor(self.runner, prepared.path, validations)
-        self.last_executor = ProjectTaskExecutor(task, prepared, provider)
+        self.last_executor = ProjectTaskExecutor(task, prepared, provider, self.authority)
         return self.last_executor
