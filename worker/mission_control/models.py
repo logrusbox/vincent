@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
+from datetime import datetime
 from enum import StrEnum
+import re
 from typing import Any, Mapping
 
 
+SUPPORTED_PRIORITIES = {"CRITICAL": 0, "HIGH": 1, "NORMAL": 2, "LOW": 3}
 SUPPORTED_SCHEMA_VERSION = 1
 SUPPORTED_INTEGRATION_POLICIES = {"HUMAN_APPROVAL_REQUIRED"}
 
@@ -26,6 +29,18 @@ class TaskState(StrEnum):
     FAILED = "FAILED"
     CANCELLED = "CANCELLED"
     SUPERSEDED = "SUPERSEDED"
+
+
+def parse_created_at(value: str) -> datetime:
+    """Protocol v1 uses UTC calendar timestamps with at most microsecond precision."""
+    if not isinstance(value, str) or not re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z", value
+    ):
+        raise ProtocolError("created_at must be a UTC timestamp ending in Z")
+    try:
+        return datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError as exc:
+        raise ProtocolError("created_at is not a valid calendar timestamp") from exc
 
 
 def _required_text(data: Mapping[str, Any], key: str) -> str:
@@ -89,7 +104,7 @@ class Task:
             raise ProtocolError("task must be an object")
 
         version = data.get("schema_version")
-        if version != SUPPORTED_SCHEMA_VERSION:
+        if type(version) is not int or version != SUPPORTED_SCHEMA_VERSION:
             raise ProtocolError(
                 f"unsupported schema_version {version!r}; expected {SUPPORTED_SCHEMA_VERSION}"
             )
@@ -141,6 +156,12 @@ class Task:
                 "forbidden_actions are not mechanically enforceable in protocol v1; use repository/task authority boundaries instead"
             )
 
+        created_at = _required_text(data, "created_at")
+        parse_created_at(created_at)
+        priority = _required_text(data, "priority") if "priority" in data else "NORMAL"
+        if priority not in SUPPORTED_PRIORITIES:
+            raise ProtocolError(f"unsupported priority {priority!r}")
+
         task = cls(
             schema_version=version,
             task_id=_required_text(data, "task_id"),
@@ -151,11 +172,11 @@ class Task:
             acceptance_criteria=criteria,
             state=state,
             revision=revision,
-            created_at=_required_text(data, "created_at"),
+            created_at=created_at,
             assigned_worker=assigned,
             required_capabilities=_string_list(data, "required_capabilities"),
             minimum_ram_gb=minimum_ram,
-            priority=_required_text(data, "priority") if "priority" in data else "NORMAL",
+            priority=priority,
             dependencies=_string_list(data, "dependencies"),
             forbidden_actions=forbidden_actions,
             integration_policy=integration_policy,

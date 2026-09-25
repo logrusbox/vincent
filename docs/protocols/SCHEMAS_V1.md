@@ -26,3 +26,12 @@ Required: `decision_id`, `task_id`, `question`, `options`, `blocking`, `state`, 
 
 Once answered and acted upon, the record is immutable. Changed direction creates a superseding decision.
 
+
+## Task priority and creation time
+
+Protocol v1 accepts only `CRITICAL`, `HIGH`, `NORMAL`, and `LOW`, in that order.
+An omitted priority means `NORMAL`; unsupported values are rejected. `created_at`
+is a valid UTC calendar timestamp `YYYY-MM-DDTHH:MM:SS[.ffffff]Z`, with optional
+one-to-six fractional digits. Offsets, naive times, leap seconds, impossible
+dates, and greater precision are rejected. Discovery compares parsed instants,
+then task IDs, so fractional notation cannot invert chronological order.

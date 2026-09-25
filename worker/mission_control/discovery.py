@@ -6,14 +6,14 @@ import json
 import subprocess
 from pathlib import Path
 
-from .models import ProtocolError, Task, TaskState
+from .models import ProtocolError, Task, TaskState, SUPPORTED_PRIORITIES, parse_created_at
 
 
 class DiscoveryError(RuntimeError):
     pass
 
 
-PRIORITY = {"CRITICAL": 0, "HIGH": 1, "NORMAL": 2, "LOW": 3}
+PRIORITY = SUPPORTED_PRIORITIES
 
 
 class GitTaskSource:
@@ -76,4 +76,4 @@ class GitTaskSource:
             )
             and all(states.get(dependency) is TaskState.COMPLETED for dependency in task.dependencies)
         ]
-        return tuple(sorted(candidates, key=lambda task: (PRIORITY.get(task.priority, 99), task.created_at, task.task_id)))
+        return tuple(sorted(candidates, key=lambda task: (PRIORITY[task.priority], parse_created_at(task.created_at), task.task_id)))

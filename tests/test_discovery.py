@@ -55,6 +55,17 @@ class DiscoveryTests(unittest.TestCase):
         eligible = self.source.eligible("worker-1", frozenset({"python"}), available_ram_gb=16)
         self.assertEqual([item.task_id for item in eligible], ["HIGH", "LOW"])
 
+    def test_fractional_timestamps_use_chronological_order(self):
+        root = self.checkout / "coordination/tasks"
+        for name, stamp in (("SECOND", "2026-08-24T00:00:00.1Z"),
+                            ("FIRST", "2026-08-24T00:00:00Z"),
+                            ("THIRD", "2026-08-24T00:00:00.11Z")):
+            item = task(name, priority="CRITICAL")
+            item["created_at"] = stamp
+            (root / (name + ".json")).write_text(json.dumps(item))
+        eligible = self.source.eligible("worker-1", frozenset())
+        self.assertEqual([item.task_id for item in eligible[:3]], ["FIRST", "SECOND", "THIRD"])
+
     def test_missing_capability_excludes_task(self):
         eligible = self.source.eligible("worker-1", frozenset(), available_ram_gb=16)
         self.assertEqual([item.task_id for item in eligible], ["LOW"])
