@@ -21,6 +21,7 @@ from .project_executor import ProjectExecutorFactory
 from .service import WorkerService
 from .reporting import ReportPublisher
 from .task_repository import TaskRepository
+from .publication import PublicationError
 from .workspace import WorkspaceManager
 
 
@@ -53,7 +54,7 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(prog="mission-control-worker")
     result.add_argument("--config", type=Path, default=Path("/etc/mission-control/worker.toml"))
     result.add_argument("--identity-root", type=Path, default=Path("/var/lib/vincent/identity"))
-    result.add_argument("command", choices=("doctor", "initialize", "enroll", "serve"))
+    result.add_argument("command", choices=("doctor", "initialize", "enroll", "recover-publication", "serve"))
     return result
 
 
@@ -74,8 +75,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     try:
         configuration = WorkerConfiguration.load(arguments.config)
+        if arguments.command == "recover-publication":
+            from dataclasses import asdict
+            result = TaskRepository(configuration.coordination_checkout,
+                branch=configuration.coordination_branch, tasks_path=configuration.tasks_path).recover()
+            print(json.dumps(asdict(result), sort_keys=True))
+            return 0
         healthy, evidence = doctor(configuration)
-    except (ConfigurationError, ValueError) as exc:
+    except (ConfigurationError, PublicationError, ValueError) as exc:
         print(json.dumps({"healthy": False, "error": str(exc)}, sort_keys=True))
         return 2
     if arguments.command == "doctor":
