@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+: "${VINCENT_CODEX_MANIFEST:?provide an absolute reviewed local provider manifest}"
 
 status_root=/var/lib/vincent-install
 service_user=vincent
@@ -44,34 +45,18 @@ if ! grep -q "^${service_user}:" /etc/subgid; then
     usermod --add-subgids 100000-165535 "$service_user"
 fi
 
-# Run the official Codex installer from Vincent's own protected cache. The
-# root-owned status directory is intentionally not used as an executable path
-# for the non-login service account.
-codex_installer=$service_cache/codex-install.sh
-curl --fail --location --proto '=https' --tlsv1.2 https://chatgpt.com/codex/install.sh -o "$codex_installer"
-chown "$service_user:$service_user" "$codex_installer"
-chmod 0700 "$codex_installer"
-sha256sum "$codex_installer" >"$status_root/codex-install.sh.sha256"
-service_run sh "$codex_installer"
-
-# Codex now ships companion executables used by tool-backed sessions. Do not
-# copy only the top-level `codex` binary into /usr/local/bin: Codex resolves
-# codex-code-mode-host relative to its own executable directory. Preserve the
-# required companion next to the root-owned runtime copy.
-codex_binary=$service_home/.local/bin/codex
-[ -x "$codex_binary" ] || { echo "official Codex installer did not create expected binary" >&2; exit 1; }
-codex_host=$(find "$service_home" -type f -name codex-code-mode-host -perm -u+x -print -quit 2>/dev/null || true)
-[ -n "$codex_host" ] || { echo "official Codex installer did not create codex-code-mode-host" >&2; exit 1; }
-install -d -o root -g root -m 0755 "$codex_root/bin"
-install -o root -g root -m 0755 "$codex_binary" "$codex_root/bin/codex"
-install -o root -g root -m 0755 "$codex_host" "$codex_root/bin/codex-code-mode-host"
+# This optional operator command requires an independently reviewed manifest.
+# Preserve codex-code-mode-host beside /opt/vincent-codex/bin/codex.
+: "${VINCENT_CODEX_MANIFEST:?provide an absolute reviewed local provider manifest}"
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+python3 "$script_dir/install-provider.py" "$VINCENT_CODEX_MANIFEST" --destination "$codex_root"
 ln -sfn "$codex_root/bin/codex" /usr/local/bin/codex
 ln -sfn "$codex_root/bin/codex-code-mode-host" /usr/local/bin/codex-code-mode-host
 
 podman --version
 docker --version
 [ "$(service_run podman info --format '{{.Host.Security.Rootless}}')" = true ]
-service_run podman run --rm docker.io/library/hello-world:latest >/dev/null
+service_run podman unshare true
 gh --version
 bwrap --version
 codex --version
@@ -96,7 +81,7 @@ payload = {
     "bubblewrap": output("bwrap", "--version"),
     "codex_code_mode_host": str(Path("/usr/local/bin/codex-code-mode-host").resolve()),
     "network_manager": output("nmcli", "--version"),
-    "codex_installer_sha256": Path("/var/lib/vincent-install/codex-install.sh.sha256").read_text().split()[0],
+    "codex_manifest": json.loads(Path("/opt/vincent-codex/bin/manifest.json").read_text()),
 }
 Path(sys.argv[1]).write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n")
 PY
