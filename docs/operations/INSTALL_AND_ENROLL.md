@@ -14,7 +14,7 @@ A successful fresh Vincent installation should establish:
 - self-tests, status and diagnostics;
 - network state/recovery interfaces;
 - no private project/fleet/AI-provider authority by default;
-- **READY / unassigned** state independent of Mission Control.
+- **READY / unassigned** state independent of CIC Station.
 
 A conventional human installer account is not required for normal Vincent operation.
 
@@ -43,17 +43,17 @@ Where supported, verify/report non-secret effective provider identity/account/or
 
 Provider credentials remain in protected provider/OS credential storage and are excluded from logs/diagnostics/reports/Git.
 
-## Mission Control fleet enrollment
+## CIC Station fleet enrollment
 
-Mission Control is optional. A standalone READY worker does not contact/trust the private fleet automatically.
+CIC Station is optional. A standalone READY worker does not contact/trust the private fleet automatically.
 
 When the operator chooses managed-fleet enrollment:
 
 1. Vincent exposes/generates the worker enrollment identity/request required by the current protocol.
-2. Operator/Mission Control verifies and explicitly approves the worker identity.
+2. Operator/CIC Station verifies and explicitly approves the worker identity.
 3. Scoped/revocable fleet authorization is delivered outside ordinary Git state.
 4. Vincent establishes authenticated outbound control-plane communication.
-5. Mission Control may assign roles/scopes, bounded tasks/leases, and desired AI-provider identity/profile policy.
+5. CIC Station may assign roles/scopes, bounded tasks/leases, and desired AI-provider identity/profile policy.
 6. Vincent continues to enforce its local product/safety requirements and project requirements while following valid managed-fleet authority.
 
 Revoking/suspending a worker must not require distributing or rotating a shared fleet-wide credential.
@@ -62,7 +62,7 @@ Revoking/suspending a worker must not require distributing or rotating a shared 
 
 Do not casually delete or regenerate a currently authorized worker identity during troubleshooting.
 
-A deliberate reinstall normally creates a new local worker identity. The old identity/credentials should be revoked/retired according to the relevant project/Mission Control procedure unless a separately designed supported identity-recovery mechanism explicitly restores it.
+A deliberate reinstall normally creates a new local worker identity. The old identity/credentials should be revoked/retired according to the relevant project/CIC Station procedure unless a separately designed supported identity-recovery mechanism explicitly restores it.
 
 Worker replacement is preferred over copying an entire old worker disk as a normal recovery mechanism.
 

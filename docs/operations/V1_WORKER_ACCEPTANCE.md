@@ -17,7 +17,7 @@ validated installer
   -> maintenance/recovery
 ```
 
-Mission Control is not required for the basic Vincent 1.0 worker proof. Managed-fleet integration is a separate program/product milestone.
+CIC Station is not required for the basic Vincent 1.0 worker proof. Managed-fleet integration is a separate program/product milestone.
 
 ## 1. Exact source and installer evidence
 
@@ -57,7 +57,7 @@ Verify:
 - self-tests/status/diagnostics start normally;
 - immutable installer provenance is displayed/reported;
 - current Vincent software version is displayed/reported separately;
-- worker reaches READY/unassigned without private Mission Control state or credentials;
+- worker reaches READY/unassigned without private CIC Station state or credentials;
 - no reusable Git/fleet/provider/production credential was embedded in the installer.
 
 ## 4. Network resilience proof

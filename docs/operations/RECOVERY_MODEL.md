@@ -86,6 +86,6 @@ Vincent workers generally do not require full-system backups as their primary re
 
 Local logs/caches/workspaces may be useful evidence, but the architecture assumes they can be lost. Credentials are protected/revocable state, not Git backup content.
 
-## Mission Control boundary
+## CIC Station boundary
 
-Managed-fleet recovery, control-plane database/application recovery, leases, worker retirement history and private fleet state belong to Mission Control documentation. Vincent documents only the worker-side recovery behavior and integration requirements.
+Managed-fleet recovery, control-plane database/application recovery, leases, worker retirement history and private fleet state belong to CIC Station documentation. Vincent documents only the worker-side recovery behavior and integration requirements.
