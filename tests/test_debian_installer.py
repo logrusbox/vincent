@@ -302,6 +302,12 @@ class DebianInstallerTests(unittest.TestCase):
         self.assertIn('print(f"vincent-worker-{value:06d}")', script)
         self.assertIn('hostnamectl set-hostname "$vincent_hostname"', script)
 
+    def test_debian_source_location_is_version_pinned(self):
+        source = (INSTALLER / "source.env").read_text()
+        version = re.search(r"^DEBIAN_VERSION=(.+)$", source, re.MULTILINE).group(1)
+        self.assertIn(f"/archive/{version}/amd64/iso-cd", source)
+        self.assertNotIn("/current/", source)
+
     def test_fetch_requires_the_debian_cd_signing_keyring(self):
         script = (INSTALLER / "fetch-source.sh").read_text()
         self.assertIn("/usr/share/keyrings/debian-role-keys.gpg", script)
