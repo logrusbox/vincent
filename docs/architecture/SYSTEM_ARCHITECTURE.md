@@ -72,3 +72,19 @@ Ambiguous ownership or authoritative divergence blocks/escalates instead of gues
 Loss of a worker should cost only reconstructable caches/environment state, local logs, worker-specific credentials that can be revoked/recreated, and at most bounded unpushed progress. Authoritative completed work must remain external to the worker.
 
 CIC Station, when used, is also designed as a replaceable control-plane service whose durable program/application source and private fleet state are separately recoverable according to its own architecture.
+
+## Provider invocation bounds
+
+The executor consumes `Provider.execute` and provider-neutral results. Codex is
+composed in `providers.py`; workspace, validation, publication, and recovery do
+not import the Codex adapter. Provisioning/identity-health abstraction remains
+tracked separately in #38.
+
+`[provider].execution_timeout_seconds` is an explicit positive operator policy
+required before the worker service can run. The sample value is an example,
+not a hidden fallback. SIGINT/SIGTERM share the cancellation event with provider
+execution. Deadline/cancellation stops the original process group, escalates
+TERM to KILL, preserves partial output and workspace, and reports distinct
+TIMEOUT/INTERRUPTED reasons as BLOCKED. Automatic retry is prohibited; reconcile
+work and publication before restarting. This controls ordinary process
+lifecycle; hostile process escape and credential isolation remain #48.

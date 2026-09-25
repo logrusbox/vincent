@@ -16,7 +16,7 @@ class CodexRunnerTests(unittest.TestCase):
             return subprocess.CompletedProcess(command, 0, '{"type":"turn.completed"}\n', "")
 
         with tempfile.TemporaryDirectory() as directory:
-            result = CodexRunner(process_runner=process).execute(Path(directory), "Implement task")
+            result = CodexRunner(process_runner=process, timeout_seconds=60).execute(Path(directory), "Implement task")
         self.assertTrue(result.succeeded)
         self.assertEqual(result.events[0]["type"], "turn.completed")
         self.assertEqual(observed["command"], ["codex", "exec", "--json", "--sandbox", "workspace-write", "-"])
@@ -37,7 +37,7 @@ class CodexRunnerTests(unittest.TestCase):
         def missing(*args, **kwargs):
             raise FileNotFoundError
 
-        result = CodexRunner(process_runner=missing).execute(Path("."), "task")
+        result = CodexRunner(process_runner=missing, timeout_seconds=60).execute(Path("."), "task")
         self.assertEqual(result.failure, CodexFailure.UNKNOWN_FAILURE)
         self.assertIsNone(result.exit_status)
 
