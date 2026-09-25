@@ -219,7 +219,7 @@ class DebianInstallerTests(unittest.TestCase):
         self.assertIn("codex-code-mode-host", bootstrap)
         self.assertIn("/opt/vincent-codex/bin/codex", bootstrap)
         self.assertIn("/usr/local/bin/codex-code-mode-host", bootstrap)
-        self.assertIn("codex_code_mode_host", selftest)
+        self.assertNotIn('run("codex"', selftest)
 
     def test_build_number_is_durable_and_consistent(self):
         build_number = (INSTALLER / "BUILD_NUMBER").read_text().strip()
@@ -244,7 +244,7 @@ class DebianInstallerTests(unittest.TestCase):
         self.assertIn("--destination", script)
         self.assertNotIn(" fetch ", script)
         self.assertNotIn('rm -rf "$source_root"', script)
-        self.assertLess(script.index("--destination"), script.index('while [ "$attempt"'))
+        self.assertNotIn("https://github.com", script)
 
     def test_dashboard_and_tty2_codex_console_exist(self):
         dashboard = (INSTALLER / "console-status.sh").read_text()

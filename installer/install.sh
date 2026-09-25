@@ -54,7 +54,7 @@ systemctl daemon-reload
 identity_file=$state_root/identity/identity.json
 request_file=$state_root/identity/enrollment-request.json
 if [ -e "$identity_file" ]; then
-    if [ "$resume_identity" = 1 ] && [ -s "$request_file" ]; then
+    if [ "$resume_identity" = 1 ] && [ -s "$state_root/identity/worker_ed25519" ]; then
         echo "existing in-progress Vincent identity detected; explicitly resuming bootstrap"
     else
         echo "existing identity detected; refusing implicit reuse" >&2
@@ -67,8 +67,8 @@ else
         XDG_CONFIG_HOME="$state_root/.config" XDG_CACHE_HOME="$state_root/.cache" \
         XDG_DATA_HOME="$state_root/.local/share" PATH=/usr/local/bin:/usr/bin:/bin \
         "$install_root/venv/bin/mission-control-worker" \
-        --identity-root "$state_root/identity" enroll
+        --identity-root "$state_root/identity" initialize
 fi
 
-echo "installation staged; review and approve enrollment before enabling the service"
+echo "local installation staged; configure a standalone project or explicitly enroll later"
 echo "service was not enabled or started"

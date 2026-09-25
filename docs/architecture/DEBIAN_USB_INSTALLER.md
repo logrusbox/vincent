@@ -72,7 +72,7 @@ Provider/project/CIC Station authentication occurs after the public bootstrap bo
 
 Installer build 0024 embeds `platform.tar.gz`, `payload-manifest.json`, and the verifier. Debian installation copies them to `/opt/vincent-installer`. First boot verifies SHA-256, the Git archive commit, and independent runtime/installer metadata before extracting or executing the source. This is integrity checking within the trusted installer image, not a replacement for authenticating the complete installer image.
 
-The bundled package installs with no package index or Git fetch. A resumed installation verifies existing source and preserves unexpected modifications for explicit recovery. Optional toolchain/provider provisioning remains online pending the standalone READY work in #37/#44. Physical acceptance of build 0024 remains pending.
+The bundled package installs with no package index or Git fetch. A resumed installation verifies existing source and preserves unexpected modifications for explicit recovery. Build 0025 also bundles local runtime/container dependencies and makes provider provisioning optional after local READY. Physical acceptance of these changes remains pending.
 
 ## Online installer evolution
 

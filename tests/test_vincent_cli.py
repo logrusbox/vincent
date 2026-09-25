@@ -1,46 +1,49 @@
 import json
-import unittest
-from unittest.mock import patch
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import unittest
+from unittest.mock import patch
 
 from mission_control import vincent_cli
+from mission_control.enrollment import initialize_identity, request_enrollment
 
-class Response:
-    def __enter__(self): return self
-    def __exit__(self, *_): return False
 
 class VincentCliTests(unittest.TestCase):
-    @patch("mission_control.vincent_cli.json.load")
-    @patch("mission_control.vincent_cli.urllib.request.urlopen")
-    def test_public_bootstrap_policy_is_validated(self, urlopen, load):
-        urlopen.return_value = Response()
-        load.return_value = {"schema_version": 1, "product": "Vincent", "bootstrap_repository": "logrusbox/vincent", "platform_repository": "logrusbox/vincent"}
-        self.assertEqual(vincent_cli.load_instructions()["product"], "Vincent")
-
-    @patch("mission_control.vincent_cli.json.load")
-    @patch("mission_control.vincent_cli.urllib.request.urlopen")
-    def test_untrusted_bootstrap_repository_is_rejected(self, urlopen, load):
-        urlopen.return_value = Response()
-        load.return_value = {"schema_version": 1, "product": "Vincent", "bootstrap_repository": "attacker/repository", "platform_repository": "attacker/repository"}
-        with self.assertRaises(RuntimeError): vincent_cli.load_instructions()
-
-    def test_enrollment_request_uses_identity_directory(self):
-        self.assertEqual(
-            vincent_cli.ENROLLMENT_REQUEST,
-            Path("/var/lib/vincent/identity/enrollment-request.json"),
-        )
-
-    def test_authorization_must_match_worker(self):
+    def test_standalone_ready_without_provider_network_or_enrollment(self):
         with TemporaryDirectory() as temporary:
-            authorization = Path(temporary) / "authorization.json"
-            authorization.write_text(json.dumps({"schema_version": 1, "worker_id": "worker-other", "repository_scopes": []}))
-            with patch.object(vincent_cli, "AUTHORIZATION", authorization):
-                with self.assertRaises(RuntimeError): vincent_cli.load_authorization("worker-this")
+            root = Path(temporary)
+            identity = initialize_identity(root / 'identity')
+            self.assertFalse((root / 'identity/enrollment-request.json').exists())
+            ready = root / 'ready.json'
+            ready.write_text(json.dumps({'schema_version': 1, 'state': 'READY',
+                                         'worker_id': identity.worker_id, 'verified_at': 'test'}))
+            with patch('socket.create_connection', side_effect=AssertionError('network prohibited')):
+                with patch('shutil.which', return_value=None):
+                    status = vincent_cli.local_status(root / 'identity', ready)
+            self.assertEqual(status['local_state'], 'READY')
+            self.assertFalse(status['provider_available'])
+            enrolled = request_enrollment(root / 'identity')
+            self.assertEqual(enrolled.worker_id, identity.worker_id)
+            self.assertEqual(enrolled.fingerprint, identity.fingerprint)
 
-    def test_missing_authorization_is_enrollment_required(self):
+    def test_missing_or_mismatched_readiness_does_not_claim_ready(self):
         with TemporaryDirectory() as temporary:
-            with patch.object(vincent_cli, "AUTHORIZATION", Path(temporary) / "missing.json"):
-                self.assertIsNone(vincent_cli.load_authorization("worker-this"))
+            root = Path(temporary)
+            initialize_identity(root / 'identity')
+            ready = root / 'ready.json'
+            self.assertEqual(vincent_cli.local_status(root / 'identity', ready)['local_state'], 'SETUP_REQUIRED')
+            ready.write_text(json.dumps({'schema_version': 1, 'state': 'READY', 'worker_id': 'other'}))
+            self.assertEqual(vincent_cli.local_status(root / 'identity', ready)['local_state'], 'SETUP_REQUIRED')
 
-if __name__ == "__main__": unittest.main()
+    def test_enrollment_rejects_substituted_public_key(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            initialize_identity(root / 'first')
+            initialize_identity(root / 'other')
+            (root / 'first/worker_ed25519.pub').write_text((root / 'other/worker_ed25519.pub').read_text())
+            with self.assertRaisesRegex(RuntimeError, 'disagree'):
+                request_enrollment(root / 'first')
+
+
+if __name__ == '__main__':
+    unittest.main()

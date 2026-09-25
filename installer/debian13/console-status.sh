@@ -74,8 +74,8 @@ if checks:
         print(f"{item.get('name','unknown'):<28} {result:<4} {clipped(item.get('detail',''), width-40)}")
     print("-" * min(width, 100))
 
-if state == "ENROLLMENT_REQUIRED" and overall == "PASS":
-    print("READY FOR REMOTE ENROLLMENT")
+if state == "READY" and overall == "PASS":
+    print("READY / UNASSIGNED — optional provider setup and CIC Station enrollment")
 elif state == "FAILED" or overall == "FAIL":
     print("INSTALLATION / SELF-TEST FAILURE — photograph this screen")
 else:

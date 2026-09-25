@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .configuration import ConfigurationError, WorkerConfiguration
 from .durable_state import DurableStateStore, recovery_action
-from .enrollment import EnrollmentError, generate_enrollment
+from .enrollment import EnrollmentError, initialize_identity, request_enrollment
 from .claims import GitClaimStore
 from .codex_runner import CodexRunner
 from .discovery import GitTaskSource
@@ -51,17 +51,22 @@ def doctor(configuration: WorkerConfiguration) -> tuple[bool, dict]:
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(prog="mission-control-worker")
     result.add_argument("--config", type=Path, default=Path("/etc/mission-control/worker.toml"))
-    result.add_argument("--identity-root", type=Path, default=Path("/var/lib/mission-control/identity"))
-    result.add_argument("command", choices=("doctor", "enroll", "serve"))
+    result.add_argument("--identity-root", type=Path, default=Path("/var/lib/vincent/identity"))
+    result.add_argument("command", choices=("doctor", "initialize", "enroll", "serve"))
     return result
 
 
 def main(argv: list[str] | None = None) -> int:
     arguments = parser().parse_args(argv)
-    if arguments.command == "enroll":
+    if arguments.command in ("initialize", "enroll"):
         try:
-            request = generate_enrollment(arguments.identity_root)
-        except EnrollmentError as exc:
+            if arguments.command == "initialize":
+                request = initialize_identity(arguments.identity_root)
+            else:
+                if not (arguments.identity_root / "identity.json").exists():
+                    initialize_identity(arguments.identity_root)
+                request = request_enrollment(arguments.identity_root)
+        except (EnrollmentError, OSError, ValueError) as exc:
             print(json.dumps({"created": False, "error": str(exc)}, sort_keys=True))
             return 2
         print(request.to_json(), end="")

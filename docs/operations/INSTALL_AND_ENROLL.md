@@ -81,3 +81,27 @@ Before starting real work, verify at least:
 - workspace is clean/isolated or unexpected state has been explicitly preserved/escalated.
 
 Do not interpret a successful local setup command as authorization to perform production, destructive external, credential-expanding or protected integration actions.
+
+
+## Build-0025 standalone lifecycle
+
+First boot installs the verified bundled payload and configures bundled local
+runtime dependencies without contacting GitHub, a model provider, or a registry.
+The locked Vincent identity is generated locally. No enrollment request is
+created automatically and the coordination execution service remains disabled.
+A passing local self-test writes a READY/unassigned snapshot; `vincent status`
+(or `vincent`) displays it without network access. Provider availability is a
+separate capability and never grants authority. A restart of first-boot recovery
+invalidates the previous READY snapshot until local checks pass again.
+
+`vincent enroll`, run under the Vincent service identity or the authorized local
+administrator, explicitly exports a public enrollment request using the existing
+installation identity. This does not contact CIC Station, grant managed authority,
+or enable execution. The authenticated CIC enrollment transport remains #35/#36.
+
+Provider installation/authentication and operator-selected standalone project
+configuration are later explicit steps. The legacy online
+`bootstrap/provision-worker-baseline.sh` is no longer a first-boot dependency;
+its mutable Codex installer remains under review in #42. Use the documented
+administrative recovery path for privileged maintenance; do not give task
+processes unrestricted sudo. Physical acceptance remains required.
