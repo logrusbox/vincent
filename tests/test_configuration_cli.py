@@ -37,6 +37,17 @@ class ConfigurationCliTests(unittest.TestCase):
         finally:
             directory.cleanup()
 
+    def test_provider_bound_is_explicit_and_validated(self):
+        directory, path = self.config(VALID + '\n[provider]\nexecution_timeout_seconds = 45\n')
+        try:
+            self.assertEqual(WorkerConfiguration.load(path).provider_timeout_seconds, 45)
+            for value in ('0', '-1', 'true', '"forty"'):
+                path.write_text(VALID + '\n[provider]\nexecution_timeout_seconds = ' + value + '\n')
+                with self.assertRaises(ConfigurationError):
+                    WorkerConfiguration.load(path)
+        finally:
+            directory.cleanup()
+
     def test_relative_paths_are_rejected(self):
         directory, path = self.config(VALID.replace("/srv/codex/worktrees", "relative"))
         try:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .codex_runner import CodexRunner, ValidatedCodexExecutor
+from .provider import Provider, ValidatedProviderExecutor
 from .execution import ExecutionOutcome, ExecutionStatus
 from .models import Task
 from .publication import GitPublisher, PublicationError, PublicationResult
@@ -16,11 +16,11 @@ from .workspace import PreparedWorkspace, WorkspaceManager
 class ProjectTaskExecutor:
     task: Task
     prepared: PreparedWorkspace
-    codex: ValidatedCodexExecutor
+    provider: ValidatedProviderExecutor
     publication: PublicationResult | None = None
 
     def execute(self, task: Task) -> ExecutionOutcome:
-        outcome = self.codex.execute(task)
+        outcome = self.provider.execute(task)
         if outcome.status is not ExecutionStatus.SUCCESS:
             return outcome
         publisher = GitPublisher(self.prepared.path)
@@ -46,7 +46,7 @@ class ProjectTaskExecutor:
 
 
 class ProjectExecutorFactory:
-    def __init__(self, worker_id: str, workspaces: WorkspaceManager, runner: CodexRunner, *, git_author_name: str = "Mission Control Worker", git_author_email: str = "worker@localhost.invalid") -> None:
+    def __init__(self, worker_id: str, workspaces: WorkspaceManager, runner: Provider, *, git_author_name: str = "Mission Control Worker", git_author_email: str = "worker@localhost.invalid") -> None:
         self.worker_id = worker_id
         self.workspaces = workspaces
         self.runner = runner
@@ -68,6 +68,6 @@ class ProjectExecutorFactory:
         )
         GitPublisher(prepared.path)._git("config", "user.name", self.git_author_name)
         GitPublisher(prepared.path)._git("config", "user.email", self.git_author_email)
-        codex = ValidatedCodexExecutor(self.runner, prepared.path, validations)
-        self.last_executor = ProjectTaskExecutor(task, prepared, codex)
+        provider = ValidatedProviderExecutor(self.runner, prepared.path, validations)
+        self.last_executor = ProjectTaskExecutor(task, prepared, provider)
         return self.last_executor

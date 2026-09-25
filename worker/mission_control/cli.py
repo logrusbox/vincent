@@ -13,7 +13,7 @@ from .configuration import ConfigurationError, WorkerConfiguration
 from .durable_state import DurableStateStore, recovery_action
 from .enrollment import EnrollmentError, initialize_identity, request_enrollment
 from .claims import GitClaimStore
-from .codex_runner import CodexRunner
+from .providers import create_provider
 from .discovery import GitTaskSource
 from .engine import WorkerEngine
 from .engine_reporting import EngineReportWriter
@@ -38,6 +38,7 @@ def doctor(configuration: WorkerConfiguration) -> tuple[bool, dict]:
     )
     checks = {
         "worker_id": configuration.worker_id,
+        "provider_bound_configured": configuration.provider_timeout_seconds is not None,
         "git_available": shutil.which("git") is not None,
         "codex_available": shutil.which("codex") is not None,
         "workspace_root_absolute": configuration.workspace_root.is_absolute(),
@@ -45,7 +46,7 @@ def doctor(configuration: WorkerConfiguration) -> tuple[bool, dict]:
         "coordination_checkout_valid": coordination_checkout_valid,
         "recovery_action": recovery_action(state).value,
     }
-    return all((checks["git_available"], checks["codex_available"], checks["workspace_root_absolute"], identity_matches, coordination_checkout_valid)), checks
+    return all((checks["provider_bound_configured"], checks["git_available"], checks["codex_available"], checks["workspace_root_absolute"], identity_matches, coordination_checkout_valid)), checks
 
 
 def parser() -> argparse.ArgumentParser:
@@ -91,10 +92,11 @@ def main(argv: list[str] | None = None) -> int:
     checkout = configuration.coordination_checkout
     source = GitTaskSource(checkout, branch=configuration.coordination_branch, tasks_path=configuration.tasks_path)
     task_repository = TaskRepository(checkout, branch=configuration.coordination_branch, tasks_path=configuration.tasks_path)
+    stop = Event()
     factory = ProjectExecutorFactory(
         configuration.worker_id,
         WorkspaceManager(configuration.workspace_root),
-        CodexRunner(),
+        create_provider("codex", timeout_seconds=configuration.provider_timeout_seconds, cancel=stop),
         git_author_name=configuration.git_author_name,
         git_author_email=configuration.git_author_email,
     )
@@ -112,7 +114,6 @@ def main(argv: list[str] | None = None) -> int:
             "0.1.0",
         ),
     )
-    stop = Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     signal.signal(signal.SIGINT, lambda *_: stop.set())
     return WorkerService(engine, configuration.poll_seconds, stop).run()

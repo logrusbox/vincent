@@ -16,3 +16,8 @@ tasks_path = "coordination/tasks"
 [git]
 author_name = "Mission Control Worker"
 author_email = "worker@localhost.invalid"
+
+[provider]
+# Operator-selected maximum duration for each provider invocation.
+# Required before serve; select this for the work rather than copying blindly.
+execution_timeout_seconds = 900

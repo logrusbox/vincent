@@ -25,6 +25,7 @@ class WorkerConfiguration:
     git_author_name: str = "Mission Control Worker"
     git_author_email: str = "worker@localhost.invalid"
     poll_seconds: int = 60
+    provider_timeout_seconds: int | None = None
 
     @classmethod
     def load(cls, path: Path) -> "WorkerConfiguration":
@@ -62,4 +63,10 @@ class WorkerConfiguration:
         author_email = git_config.get("author_email", "worker@localhost.invalid")
         if not all(isinstance(item, str) and item for item in (branch, tasks_path, author_name, author_email)):
             raise ConfigurationError("coordination and Git strings must not be empty")
-        return cls(worker_id, state_file, workspace_root, coordination_checkout, identity_file, frozenset(capabilities), branch, tasks_path, author_name, author_email, poll)
+        provider = data.get("provider", {})
+        if not isinstance(provider, dict):
+            raise ConfigurationError("provider must be a table")
+        timeout = provider.get("execution_timeout_seconds")
+        if timeout is not None and (type(timeout) is not int or timeout <= 0):
+            raise ConfigurationError("provider.execution_timeout_seconds must be a positive integer")
+        return cls(worker_id, state_file, workspace_root, coordination_checkout, identity_file, frozenset(capabilities), branch, tasks_path, author_name, author_email, poll, timeout)

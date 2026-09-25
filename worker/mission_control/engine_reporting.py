@@ -19,7 +19,7 @@ class EngineReportWriter:
         if outcome.status is ExecutionStatus.SUCCESS:
             starting = project.prepared.starting_commit if project else task.claim_nonce or "unknown"
             ending = project.publication.ending_commit if project and project.publication else starting
-            validation = project.codex.last_validation if project else ()
+            validation = project.provider.last_validation if project else ()
             report = CompletionReport(
                 1, task.task_id, self.worker_id, task.project_id, task.repository,
                 project.prepared.branch if project else "unknown", starting, ending,
