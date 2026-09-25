@@ -52,7 +52,7 @@ deb [arch=amd64 signed-by=$archive_keyring] https://deb.debian.org/debian trixie
 deb [arch=amd64 signed-by=$archive_keyring] https://security.debian.org/debian-security trixie-security main
 EOF
 
-packages='debian-archive-keyring sudo git curl ca-certificates gpg jq gh rsync openssh-client openssh-server python3 python3-venv python3-pip python3-setuptools python3-wheel podman podman-docker uidmap slirp4netns passt fuse-overlayfs build-essential xz-utils network-manager iw wpasupplicant rfkill bubblewrap'
+packages='debian-archive-keyring sudo git curl ca-certificates gpg jq gh rsync openssh-client openssh-server python3 python3-venv python3-pip python3-setuptools python3-wheel busybox-static podman podman-docker uidmap slirp4netns passt fuse-overlayfs build-essential xz-utils network-manager iw wpasupplicant rfkill bubblewrap'
 
 # Isolate package resolution completely from the build host. GitHub Actions runs
 # Ubuntu, while Vincent targets Debian 13; inheriting host APT sources would

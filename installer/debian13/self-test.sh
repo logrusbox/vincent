@@ -49,7 +49,7 @@ run_as_vincent(
     ["podman", "info", "--format", "{{.Host.Security.Rootless}}"],
     lambda rc, out, err: rc == 0 and out.strip() == "true",
 )
-run_as_vincent("container_namespace", ["podman", "unshare", "/bin/true"])
+run_as_vincent("container_execution", ["podman", "run", "--rm", "--pull=never", "--network=none", "--read-only", "--rootfs", "/opt/vincent/container-self-test", "/bin/busybox", "true"])
 run_as_vincent("docker_compatible_cli", ["docker", "--version"])
 run("bubblewrap", ["bwrap", "--version"])
 run("python_packaging", ["python3", "-c", "import pip, setuptools.build_meta"])
