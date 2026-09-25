@@ -1,6 +1,6 @@
 # Vincent Product Roadmap
 
-This roadmap covers **Vincent only**. The cross-product Vincent + CIC Station program roadmap and program milestones are owned by [`logrusbox/vincent-program`](https://github.com/logrusbox/vincent-program).
+This roadmap covers **Vincent only**. The cross-product Vincent + CIC Station program roadmap and program milestones are owned by [`logrusbox/fleet`](https://github.com/logrusbox/fleet).
 
 Normative product intent and requirements live in [`PRODUCT.md`](PRODUCT.md) and [`REQUIREMENTS.md`](REQUIREMENTS.md). Consequential design choices live in [`decisions/`](decisions/). Current implementation/physical-test state lives in [`STATUS.md`](STATUS.md). Unscheduled ideas belong in GitHub issues rather than a permanent planned-features document.
 

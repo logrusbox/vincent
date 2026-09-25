@@ -1,6 +1,6 @@
 # Vincent Current Status
 
-**Status date:** 2026-08-31 (America/Sitka)
+**Status date:** 2026-09-25 (America/Anchorage)
 
 This file records temporary/current implementation and validation state. It is not a product specification or permanent historical archive.
 
@@ -101,13 +101,13 @@ PR #46 QA-cleanup validation on build-0023 candidate source passed:
 - Python package build: PASS;
 - GitHub Actions validation runs on Node-24-compatible current action majors.
 
-The immediately preceding build-0022 ISO path successfully built and passed `INSTALLER_INSPECTION=PASS`; its CI job then failed only because checksum verification changed into `dist/` while the checksum file already contained a `dist/...iso` path. PR #46 corrects that workflow-path defect. End-to-end ISO workflow verification for build 0023 occurs after integration to `main`, because the ISO workflow intentionally runs on `main`/manual dispatch rather than PRs.
+The immediately preceding build-0022 ISO path successfully built and passed `INSTALLER_INSPECTION=PASS`; its CI job then failed only because checksum verification changed into `dist/` while the checksum file already contained a `dist/...iso` path. PR #46 corrects that workflow-path defect. The build-0023 ISO workflow subsequently passed on current `main` commit `1f440a8c332374d15974939a20caaf70a898968a`: [Actions run 34644256063](https://github.com/logrusbox/vincent/actions/runs/34644256063), 2026-09-11. Automated image construction/inspection is verified; physical acceptance remains pending.
 
 Physical validation of installer build `0023` remains pending and must correspond to the exact accepted source retained on `main`.
 
 ## Next technical gates
 
-1. Prove the build-0023 ISO workflow and physical installer/runtime behavior from exact `main` source.
+1. Complete physical installer/runtime acceptance from exact accepted source; the build-0023 ISO workflow is already green.
 2. Resolve #27 and #37 so the bundled Vincent payload and standalone READY lifecycle no longer require unnecessary GitHub/fleet enrollment dependencies.
 3. Resolve the pre-1.0 runtime architecture/authority blockers, including #38, #39, #47, and #48.
 4. Build the next physical-test candidate from an exact accepted `main` commit and execute the carried-forward laptop/workstation regression issues.

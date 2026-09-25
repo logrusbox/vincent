@@ -9,7 +9,7 @@ This document expands the high-level [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 3. **Vincent supervisor/runtime** — runs as the dedicated `vincent` service identity, reconciles local/remote task state, prepares environments, invokes AI-provider adapters, validates/publishes/reports, and recovers after interruption.
 4. **Workspace/environment layer** — isolated Git worktree/checkout plus project-local or containerized tooling and project version constraints.
 5. **AI-provider adapter** — installs/configures/invokes the selected provider and implements provider-specific enrollment/authentication health/identity checks.
-6. **External project/control source** — authoritative project requirements/instructions/tasks/results for standalone operation, or the Mission Control integration when explicitly enrolled.
+6. **External project/control source** — authoritative project requirements/instructions/tasks/results for standalone operation, or the CIC Station integration when explicitly enrolled.
 
 ## Durable authority model
 
@@ -19,7 +19,7 @@ Vincent does not attempt to make one database or worker filesystem authoritative
 |---|---|
 | Project source, requirements, repository instructions, durable project artifacts | Project repository/system |
 | Vincent product requirements, ADRs, source and releases | Vincent Git/release channel |
-| Managed-fleet trust, assignments/leases, approvals/audit | Mission Control when enrolled |
+| Managed-fleet trust, assignments/leases, approvals/audit | CIC Station when enrolled |
 | Local private worker identity and credentials | Protected worker storage; replaceable/revocable |
 | Workspace progress not yet pushed | Local and at risk; checkpoint/publish policy limits exposure |
 | Live process/session/resource samples | Local/ephemeral |
@@ -71,4 +71,4 @@ Ambiguous ownership or authoritative divergence blocks/escalates instead of gues
 
 Loss of a worker should cost only reconstructable caches/environment state, local logs, worker-specific credentials that can be revoked/recreated, and at most bounded unpushed progress. Authoritative completed work must remain external to the worker.
 
-Mission Control, when used, is also designed as a replaceable control-plane service whose durable program/application source and private fleet state are separately recoverable according to its own architecture.
+CIC Station, when used, is also designed as a replaceable control-plane service whose durable program/application source and private fleet state are separately recoverable according to its own architecture.

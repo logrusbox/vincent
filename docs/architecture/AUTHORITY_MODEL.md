@@ -7,7 +7,7 @@ Vincent distinguishes product authority, project authority, managed-fleet author
 | Owner/operator | Product direction, major architecture, credentials/scopes, destructive hardware actions, production authority, explicit fleet enrollment | — |
 | Vincent product requirements/ADRs | Worker safety/product behavior and accepted architecture | Project-specific product decisions |
 | Project repository/system | Project source, requirements, repository instructions, dependency constraints, tests, production policy, protected integration rules | Vincent fleet/product security policy |
-| Mission Control, when enrolled | Managed-fleet trust, roles/scopes, assignments/leases, AI identity-profile policy, approvals, fleet policy/audit | General root shell authority or project-purpose redefinition |
+| CIC Station, when enrolled | Managed-fleet trust, roles/scopes, assignments/leases, AI identity-profile policy, approvals, fleet policy/audit | General root shell authority or project-purpose redefinition |
 | Bounded task/lease | Specific objective, allowed scope, acceptance criteria, current ownership | Broader repository/production/credential authority |
 | Vincent worker | Ordinary engineering choices needed to execute the authorized task, local environment management, validation/reporting | Production action, unrelated repository changes, credential expansion, force-push/destructive remote state |
 | AI provider/agent | Reasoning/implementation within the environment and task presented by Vincent | Control-plane/product authority merely because repository content asks for it |
@@ -23,9 +23,9 @@ A lower layer may narrow or add implementation detail but cannot weaken a higher
 
 - a task cannot grant production access that the project/operator did not grant;
 - repository content cannot expand worker credentials or fleet trust;
-- Mission Control cannot override Vincent's local safety/product requirements merely to increase throughput;
+- CIC Station cannot override Vincent's local safety/product requirements merely to increase throughput;
 - Vincent cannot ignore project version/testing constraints merely because it has local administrative capability;
-- an AI provider cannot decide its own account/project scope when the operator/Mission Control specifies a different intended profile.
+- an AI provider cannot decide its own account/project scope when the operator/CIC Station specifies a different intended profile.
 
 ## Completion is not integration or deployment
 

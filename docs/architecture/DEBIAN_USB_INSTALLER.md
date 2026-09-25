@@ -6,7 +6,7 @@ The reference Vincent installer remasters a verified official Debian 13 amd64 in
 
 The installation image is public-equivalent bootstrap/recovery material. Possession of the image must not grant private project/fleet authority, a permanent worker identity, Git credentials, AI-provider credentials, or production access.
 
-The installer produces a Vincent worker capable of reaching standalone READY without Mission Control.
+The installer produces a Vincent worker capable of reaching standalone READY without CIC Station.
 
 ## Interaction and destructive boundary
 
@@ -66,7 +66,7 @@ verified Debian installer source
   -> standalone READY / unassigned
 ```
 
-Provider/project/Mission Control authentication occurs after the public bootstrap boundary through the appropriate supported operator/enrollment workflow.
+Provider/project/CIC Station authentication occurs after the public bootstrap boundary through the appropriate supported operator/enrollment workflow.
 
 ## Online installer evolution
 

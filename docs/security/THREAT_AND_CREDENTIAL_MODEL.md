@@ -17,7 +17,7 @@
 - Unauthorized task injection
 - Malicious repository instructions attempting to redefine authority
 - Accidental force-push, branch deletion, production action, or secret publication
-- Mission Control compromise or loss
+- CIC Station compromise or loss
 
 ## Boundaries
 
@@ -38,7 +38,7 @@ Personal access tokens are not preferred as permanent worker identities because 
 
 Provider-specific authentication belongs behind Vincent's provider-adapter boundary. Codex is the initial provider. Prefer supported device/interactive authorization for human-bound accounts when available.
 
-Mission Control may later assign desired non-secret provider identity/profile policy, but reusable provider credentials never belong in Git. Any unattended credential delivery must use a separately protected secret mechanism with unique/scoped/rotatable/revocable credentials.
+CIC Station may later assign desired non-secret provider identity/profile policy, but reusable provider credentials never belong in Git. Any unattended credential delivery must use a separately protected secret mechanism with unique/scoped/rotatable/revocable credentials.
 
 ## Revocation
 

@@ -16,7 +16,7 @@ Vincent must be a reusable worker platform and must not hard-code assumptions fo
 **Status:** Accepted  
 **Target:** 1.0.0
 
-A fresh Vincent installation must boot, self-test, diagnose itself, maintain the local system, and reach an unassigned READY state without Mission Control or private project credentials.
+A fresh Vincent installation must boot, self-test, diagnose itself, maintain the local system, and reach an unassigned READY state without CIC Station or private project credentials.
 
 ### VIN-REQ-0003 — Git-backed durable project work
 **Status:** Accepted  
@@ -320,25 +320,25 @@ Vincent should verify and report non-secret effective provider identity/account/
 
 AI-provider credentials must not be shared as a single fleet-wide secret. Any future unattended provider credential delivery must use a separately protected mechanism with unique/scoped/revocable credentials where applicable.
 
-## Mission Control integration
+## CIC Station integration
 
 ### VIN-REQ-0051 — Explicit fleet enrollment
 **Status:** Accepted  
 **Target:** integration milestone
 
-Mission Control becomes authoritative for managed-fleet policy only after explicit worker enrollment/trust. A standalone worker must not automatically contact or trust a private fleet repository/service merely because Vincent is installed.
+CIC Station becomes authoritative for managed-fleet policy only after explicit worker enrollment/trust. A standalone worker must not automatically contact or trust a private fleet repository/service merely because Vincent is installed.
 
 ### VIN-REQ-0052 — Outbound authenticated control-plane communication
 **Status:** Accepted  
-**Target:** Mission Control integration milestone
+**Target:** CIC Station integration milestone
 
 Normal Vincent-to-Mission-Control communication should be initiated outbound by Vincent over an authenticated protocol so managed workers do not require general inbound management exposure.
 
-### VIN-REQ-0053 — Mission Control identity-profile boundary
+### VIN-REQ-0053 — CIC Station identity-profile boundary
 **Status:** Accepted  
-**Target:** Mission Control integration milestone
+**Target:** CIC Station integration milestone
 
-Mission Control may specify the desired AI provider and intended non-secret identity/profile/policy. Vincent remains responsible for provider-specific local installation/enrollment and credential-health verification.
+CIC Station may specify the desired AI provider and intended non-secret identity/profile/policy. Vincent remains responsible for provider-specific local installation/enrollment and credential-health verification.
 
 ## Quality, observability, and release
 
