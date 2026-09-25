@@ -13,7 +13,7 @@ report_path = Path(sys.argv[1])
 checks = []
 
 def run(name, command, predicate=lambda rc, out, err: rc == 0):
-    completed = subprocess.run(command, text=True, capture_output=True)
+    completed = subprocess.run(command, text=True, capture_output=True, timeout=60)
     output = (completed.stdout or completed.stderr).strip()
     ok = predicate(completed.returncode, completed.stdout, completed.stderr)
     checks.append({"name": name, "ok": bool(ok), "detail": output[:500]})
@@ -38,10 +38,7 @@ def record(name, ok, detail=""):
 
 hostname = subprocess.run(["hostname"], text=True, capture_output=True, check=True).stdout.strip()
 record("hostname", bool(re.fullmatch(r"vincent-worker-\d{6}", hostname)), hostname)
-run("network_route", ["ip", "route", "get", "1.1.1.1"])
-run("network_dns", ["getent", "ahosts", "github.com"])
 run("network_manager", ["systemctl", "is-active", "--quiet", "NetworkManager"])
-run("network_diagnostics", ["/usr/local/sbin/vincent-network-diagnostics"])
 run("diagnostics_timer", ["systemctl", "is-enabled", "--quiet", "vincent-diagnostics.timer"])
 run("diagnostics_console", ["systemctl", "is-enabled", "--quiet", "vincent-diagnostics-console.service"])
 run("ssh_service", ["systemctl", "is-active", "--quiet", "ssh"])
@@ -52,11 +49,9 @@ run_as_vincent(
     ["podman", "info", "--format", "{{.Host.Security.Rootless}}"],
     lambda rc, out, err: rc == 0 and out.strip() == "true",
 )
-run_as_vincent("container_smoke", ["podman", "run", "--rm", "docker.io/library/hello-world:latest"])
+run_as_vincent("container_namespace", ["podman", "unshare", "/bin/true"])
 run_as_vincent("docker_compatible_cli", ["docker", "--version"])
 run("bubblewrap", ["bwrap", "--version"])
-run("codex", ["codex", "--version"])
-record("codex_code_mode_host", os.path.isfile("/opt/vincent-codex/bin/codex-code-mode-host") and os.access("/opt/vincent-codex/bin/codex-code-mode-host", os.X_OK), "/opt/vincent-codex/bin/codex-code-mode-host")
 run("python_packaging", ["python3", "-c", "import pip, setuptools.build_meta"])
 
 source_root = Path("/opt/vincent/source")
@@ -99,13 +94,13 @@ try:
 except Exception as exc:
     record("root_password_locked", False, repr(exc))
 
-request_path = Path("/var/lib/vincent/identity/enrollment-request.json")
+identity_path = Path("/var/lib/vincent/identity/identity.json")
 try:
-    request = json.loads(request_path.read_text())
-    required = {"worker_id", "fingerprint", "public_key"}
-    record("enrollment_request", required.issubset(request), request.get("worker_id", "missing worker_id"))
+    identity = json.loads(identity_path.read_text())
+    record("local_identity", identity.get("schema_version") == 1 and bool(identity.get("worker_id")), identity.get("worker_id", "missing"))
+    run("local_identity_key", ["ssh-keygen", "-y", "-f", "/var/lib/vincent/identity/worker_ed25519"])
 except Exception as exc:
-    record("enrollment_request", False, repr(exc))
+    record("local_identity", False, repr(exc))
 
 completed = subprocess.run(["systemctl", "is-enabled", "mission-control-worker.service"], text=True, capture_output=True)
 record("worker_authority_disabled", completed.returncode != 0, (completed.stdout or completed.stderr).strip())

@@ -24,7 +24,7 @@ while :; do
     install -d -o "$service_user" -g "$service_user" -m 0700 "$service_runtime"
     if [ ! -x /usr/local/bin/codex ]; then
         echo 'Codex is not installed yet.'
-        echo 'Waiting for bootstrap...'
+        echo 'Local READY does not require Codex. Optional provider provisioning is pending.'
         sleep 5
         continue
     fi

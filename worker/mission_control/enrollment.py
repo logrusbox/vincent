@@ -29,7 +29,7 @@ class EnrollmentRequest:
         return json.dumps(asdict(self), sort_keys=True, indent=2) + "\n"
 
 
-def generate_enrollment(identity_root: Path, *, hostname: str | None = None) -> EnrollmentRequest:
+def initialize_identity(identity_root: Path, *, hostname: str | None = None) -> EnrollmentRequest:
     """Generate a new identity once; never overwrite or silently restore one."""
     identity_root.mkdir(parents=True, exist_ok=True, mode=0o700)
     identity_file = identity_root / "identity.json"
@@ -66,7 +66,35 @@ def generate_enrollment(identity_root: Path, *, hostname: str | None = None) -> 
         requested_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     )
     identity_file.write_text(json.dumps({"schema_version": 1, "worker_id": worker_id}, indent=2) + "\n")
-    request_file.write_text(request.to_json(), encoding="utf-8")
     os.chmod(identity_file, 0o600)
-    os.chmod(request_file, 0o600)
     return request
+
+
+def request_enrollment(identity_root: Path, *, hostname: str | None = None) -> EnrollmentRequest:
+    """Explicitly export an enrollment request for an existing local identity."""
+    identity = json.loads((identity_root / "identity.json").read_text())
+    if identity.get("schema_version") != 1 or not identity.get("worker_id"):
+        raise EnrollmentError("invalid local identity")
+    private_key = identity_root / "worker_ed25519"
+    public_path = identity_root / "worker_ed25519.pub"
+    derived = subprocess.run(["ssh-keygen", "-y", "-f", str(private_key)],
+                             text=True, capture_output=True, check=True).stdout.strip()
+    public_key = public_path.read_text().strip()
+    if public_key.split()[:2] != derived.split()[:2]:
+        raise EnrollmentError("local public and private identities disagree")
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(public_path)],
+                                 text=True, capture_output=True, check=True).stdout.split()[1]
+    request = EnrollmentRequest(1, identity["worker_id"], hostname or socket.gethostname(),
+                                public_key, fingerprint,
+                                datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
+    path = identity_root / "enrollment-request.json"
+    with path.open("w", encoding="utf-8") as output:
+        os.chmod(path, 0o600)
+        output.write(request.to_json())
+    return request
+
+
+def generate_enrollment(identity_root: Path, *, hostname: str | None = None) -> EnrollmentRequest:
+    """Compatibility entry point: new identity plus an explicit local request."""
+    initialize_identity(identity_root, hostname=hostname)
+    return request_enrollment(identity_root, hostname=hostname)

@@ -8,18 +8,30 @@ expected_commit_file=/opt/vincent-installer/expected-commit
 build_number_file=/opt/vincent-installer/build-number
 source_root=/opt/vincent/source
 self_test=/usr/local/sbin/vincent-self-test
-network_attempts=20
-network_delay=15
 
 install -d -m 0750 /var/log/vincent /etc/vincent
 install -d -m 0700 /var/lib/vincent-install
 exec >>"$log_file" 2>&1
+# Invalidate a previous readiness snapshot before attempting recovery.
+if [ -f /var/lib/vincent/ready.json ]; then
+    python3 - <<'PYINVALIDATE'
+import json, os
+from pathlib import Path
+path = Path('/var/lib/vincent/ready.json')
+record = json.loads(path.read_text())
+record['state'] = 'SETUP_REQUIRED'
+temporary = path.with_suffix('.tmp')
+temporary.write_text(json.dumps(record) + '\n')
+temporary.chmod(0o644)
+os.replace(temporary, path)
+PYINVALIDATE
+fi
 
 write_status() {
     state=$1; step=$2; detail=$3; attempt=${4:-0}; maximum=${5:-0}
     route=$(ip route show default 2>/dev/null | head -n1 || true)
     addresses=$(hostname -I 2>/dev/null | xargs || true)
-    dns=fail; getent ahosts github.com >/dev/null 2>&1 && dns=pass
+    dns=not_required_for_local_ready
     python3 - "$status_file" "$state" "$step" "$detail" "$attempt" "$maximum" "$route" "$addresses" "$dns" <<'PY'
 import json, socket, sys
 from datetime import datetime, timezone
@@ -95,25 +107,24 @@ VINCENT_RESUME_IDENTITY=$resume_identity sh "$source_root/installer/install.sh" 
 printf '%s\n' "$expected_commit" >/var/lib/vincent-install/installed-commit
 chmod 0600 /var/lib/vincent-install/installed-commit
 
-attempt=1
-while [ "$attempt" -le "$network_attempts" ]; do
-    write_status BOOTSTRAPPING network "waiting for route, DNS and HTTPS to GitHub" "$attempt" "$network_attempts"
-    route_ok=false; dns_ok=false; https_ok=false
-    ip route show default >/dev/null 2>&1 && route_ok=true
-    getent ahosts github.com >/dev/null 2>&1 && dns_ok=true
-    curl --fail --silent --show-error --head --connect-timeout 5 --max-time 10 https://github.com/ >/dev/null 2>&1 && https_ok=true
-    echo "network attempt $attempt/$network_attempts route=$route_ok dns=$dns_ok https=$https_ok"
-    [ "$route_ok" = true ] && [ "$dns_ok" = true ] && [ "$https_ok" = true ] && break
-    [ "$attempt" -lt "$network_attempts" ] || { write_status FAILED network "network did not become ready" "$attempt" "$network_attempts"; exit 1; }
-    sleep "$network_delay"; attempt=$((attempt+1))
-done
-
-write_status BOOTSTRAPPING toolchain "installing and validating worker toolchain"
-sh "$source_root/bootstrap/provision-worker-baseline.sh"
+write_status BOOTSTRAPPING local-runtime "configuring bundled local runtime"
+sh "$source_root/bootstrap/provision-local.sh"
 
 write_status SELF_TESTING self-test "running unattended Vincent appliance validation"
 "$self_test"
 systemctl start vincent-diagnostics.service >/dev/null 2>&1 || true
+python3 - <<'PYREADY'
+import json, os
+from datetime import datetime, timezone
+from pathlib import Path
+identity = json.loads(Path('/var/lib/vincent/identity/identity.json').read_text())
+path = Path('/var/lib/vincent/ready.json')
+temporary = path.with_suffix('.tmp')
+temporary.write_text(json.dumps({'schema_version': 1, 'state': 'READY',
+    'worker_id': identity['worker_id'], 'verified_at': datetime.now(timezone.utc).isoformat()}) + '\n')
+temporary.chmod(0o644)
+os.replace(temporary, path)
+PYREADY
 write_bootstrap_state completed
-write_status ENROLLMENT_REQUIRED ready "build $build_number self-test passed; approve scoped enrollment remotely"
+write_status READY unassigned "local self-test passed; provider setup, project selection and CIC enrollment are separate actions"
 systemctl disable vincent-first-boot.service

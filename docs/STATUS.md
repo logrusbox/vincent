@@ -20,6 +20,18 @@ Branch policy: `main` is the only permanent branch; temporary PR branches are de
 
 Issue #27 now has a build-0024 implementation candidate: verified embedded source, offline Python package installation, preserved-source resume, and image-inspection verification. 145 tests and repository/package validation pass locally. The runtime build remains 0023; only the installer counter advances. ISO construction and physical acceptance of this new candidate remain pending. Standalone READY and optional provider provisioning remain separate open work.
 
+## Development candidate: local READY
+
+Installer build 0025 / runtime build 0024 separates local startup from optional
+provider setup and CIC enrollment (#37/#44). The complete local container/runtime
+package closure is bundled; local self-tests do not pull a registry image (#41).
+`vincent` is now an offline status command, removing the mutable-main bootstrap
+instruction dependency (#40). Identity creation and explicit enrollment export
+are separate. No execution service starts automatically. Automated validation
+passes; ISO construction, physical acceptance, and useful bounded-work proof
+remain pending. Provider installation trust (#42), execution isolation (#48),
+and authenticated managed enrollment remain open.
+
 ## Current installer/worker development
 
 The current installer/runtime implementation includes:
