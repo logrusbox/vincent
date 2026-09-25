@@ -16,6 +16,10 @@ This file records temporary/current implementation and validation state. It is n
 
 Branch policy: `main` is the only permanent branch; temporary PR branches are deleted after integration or supersession once useful work is preserved.
 
+## Development candidate: offline payload
+
+Issue #27 now has a build-0024 implementation candidate: verified embedded source, offline Python package installation, preserved-source resume, and image-inspection verification. 145 tests and repository/package validation pass locally. The runtime build remains 0023; only the installer counter advances. ISO construction and physical acceptance of this new candidate remain pending. Standalone READY and optional provider provisioning remain separate open work.
+
 ## Current installer/worker development
 
 The current installer/runtime implementation includes:

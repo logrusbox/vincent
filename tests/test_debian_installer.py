@@ -238,12 +238,13 @@ class DebianInstallerTests(unittest.TestCase):
         self.assertIn("BUILD:", console)
         self.assertIn("/etc/vincent/build-number", console)
 
-    def test_runtime_source_is_exact_public_git_commit(self):
+    def test_runtime_source_is_verified_embedded_payload(self):
         script = (INSTALLER / "first-boot.sh").read_text()
-        self.assertIn("https://github.com/Gordonfive/vincent.git", script)
-        self.assertIn("expected-commit", script)
-        self.assertIn("git -C \"$source_root\" fetch --no-tags --depth=1 origin \"$expected_commit\"", script)
-        self.assertNotIn("tar -xzf", script)
+        self.assertIn("payload-manifest.json", script)
+        self.assertIn("--destination", script)
+        self.assertNotIn(" fetch ", script)
+        self.assertNotIn('rm -rf "$source_root"', script)
+        self.assertLess(script.index("--destination"), script.index('while [ "$attempt"'))
 
     def test_dashboard_and_tty2_codex_console_exist(self):
         dashboard = (INSTALLER / "console-status.sh").read_text()

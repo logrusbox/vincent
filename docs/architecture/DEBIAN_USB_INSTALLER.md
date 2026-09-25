@@ -68,6 +68,12 @@ verified Debian installer source
 
 Provider/project/CIC Station authentication occurs after the public bootstrap boundary through the appropriate supported operator/enrollment workflow.
 
+## Bundled source verification
+
+Installer build 0024 embeds `platform.tar.gz`, `payload-manifest.json`, and the verifier. Debian installation copies them to `/opt/vincent-installer`. First boot verifies SHA-256, the Git archive commit, and independent runtime/installer metadata before extracting or executing the source. This is integrity checking within the trusted installer image, not a replacement for authenticating the complete installer image.
+
+The bundled package installs with no package index or Git fetch. A resumed installation verifies existing source and preserves unexpected modifications for explicit recovery. Optional toolchain/provider provisioning remains online pending the standalone READY work in #37/#44. Physical acceptance of build 0024 remains pending.
+
 ## Online installer evolution
 
 A proposed Vincent 1.1 path (ADR-0010) allows a compatible online installer to fetch the current approved Vincent software release from the trusted public release channel while retaining deterministic fallback to its validated bundled payload. Until that ADR is accepted/implemented, the installer uses its validated bundled Vincent payload followed by supported in-place Vincent updates.

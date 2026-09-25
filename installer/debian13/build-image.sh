@@ -30,6 +30,20 @@ install -d "$payload_root" "$(dirname -- "$output_iso")"
 git -C "$repository_root" archive --format=tar.gz --output="$payload_root/platform.tar.gz" HEAD
 printf '%s\n' "$commit" >"$payload_root/expected-commit"
 printf '%s\n' "$build_number" >"$payload_root/build-number"
+python3 - "$payload_root" "$commit" "$build_number" "$repository_root" <<'PYMETA'
+import hashlib, json, sys
+from pathlib import Path
+payload, commit, build, repository = sys.argv[1:]
+root, source = Path(payload), Path(repository)
+with (root / "platform.tar.gz").open("rb") as stream:
+    digest = hashlib.file_digest(stream, "sha256").hexdigest()
+(root / "payload-manifest.json").write_text(json.dumps({
+    "schema_version": 1, "platform_commit": commit, "installer_build": build,
+    "runtime_version": (source / "VERSION").read_text().strip(),
+    "runtime_build": (source / "BUILD_NUMBER").read_text().strip(), "sha256": digest,
+}, sort_keys=True, indent=2) + "\n")
+PYMETA
+install -m 0644 "$script_root/payload.py" "$payload_root/payload.py"
 install -m 0644 "$script_root/preseed.cfg" "$payload_root/preseed.cfg"
 install -m 0644 "$script_root/runtime-debian.sources" "$payload_root/runtime-debian.sources"
 install -m 0755 "$script_root/installer-media-guard.sh" "$payload_root/installer-media-guard.sh"
@@ -78,6 +92,8 @@ xorriso \
     -boot_image any replay \
     -map "$payload_root/preseed.cfg" /preseed.cfg \
     -map "$payload_root/platform.tar.gz" /vincent/platform.tar.gz \
+    -map "$payload_root/payload-manifest.json" /vincent/payload-manifest.json \
+    -map "$payload_root/payload.py" /vincent/payload.py \
     -map "$payload_root/expected-commit" /vincent/expected-commit \
     -map "$payload_root/build-number" /vincent/build-number \
     -map "$payload_root/runtime-debian.sources" /vincent/runtime-debian.sources \
@@ -130,8 +146,8 @@ payload={
     "output_iso":pathlib.Path(output_iso).name,
     "output_sha256":output_sha256,
     "platform_commit":commit,
-    "runtime_source":"public_git_exact_commit",
-    "runtime_repository":"https://github.com/Gordonfive/vincent.git",
+    "runtime_source":"verified_embedded_git_archive",
+    "runtime_repository":"https://github.com/logrusbox/vincent.git",
     "partitioning_mode":"debian_installer_interactive",
     "service_account":"vincent",
     "human_login_account":False,

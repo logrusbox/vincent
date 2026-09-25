@@ -16,6 +16,8 @@ for required in \
     /.disk/info \
     /preseed.cfg \
     /vincent/platform.tar.gz \
+    /vincent/payload-manifest.json \
+    /vincent/payload.py \
     /vincent/expected-commit \
     /vincent/build-number \
     /vincent/runtime-debian.sources \
@@ -45,6 +47,8 @@ for required in \
 done
 
 tar -tzf "$inspection_root/platform.tar.gz" >/dev/null
+python3 "$inspection_root/payload.py" "$inspection_root/platform.tar.gz" \
+    "$inspection_root/payload-manifest.json" "$(cat "$inspection_root/expected-commit")" "$build_number"
 tar -tzf "$inspection_root/offline-packages.tar.gz" >"$inspection_root/offline-package-list"
 [ "$(tr -d '\r\n' <"$inspection_root/build-number")" = "$build_number" ] || { echo "embedded build number mismatch" >&2; exit 3; }
 case "$(cat "$inspection_root/info")" in

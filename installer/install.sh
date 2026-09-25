@@ -35,7 +35,7 @@ install -d -o "$service_user" -g "$service_user" -m 0750 "$workspace_root" "$wor
 
 python3 -m venv --system-site-packages "$install_root/venv"
 "$install_root/venv/bin/python" -c 'import setuptools.build_meta'
-"$install_root/venv/bin/python" -m pip install --no-deps --no-build-isolation "$source_root"
+"$install_root/venv/bin/python" -m pip install --no-deps --no-build-isolation --no-index "$source_root"
 ln -sfn "$install_root/venv/bin/vincent" /usr/local/bin/vincent
 
 if [ ! -f "$configuration_root/worker.toml" ]; then
