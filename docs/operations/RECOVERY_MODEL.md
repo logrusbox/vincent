@@ -89,3 +89,19 @@ Local logs/caches/workspaces may be useful evidence, but the architecture assume
 ## CIC Station boundary
 
 Managed-fleet recovery, control-plane database/application recovery, leases, worker retirement history and private fleet state belong to CIC Station documentation. Vincent documents only the worker-side recovery behavior and integration requirements.
+
+## Interrupted coordination publication
+
+Before changing a task file, Vincent fsyncs a publication-intent journal inside
+the checkout's Git directory. The journal records the exact expected base,
+branch, task path, and intended JSON transition. Synchronization stops with a
+specific recovery instruction while a journal exists.
+
+Run `mission-control-worker --config /etc/mission-control/worker.toml recover-publication`
+as the authorized worker administrator. Recovery either commits the recorded
+transition from its unchanged base, pushes the already-created exact checkpoint,
+or recognizes a verified push whose acknowledgement was lost. Changed remote
+authority, unrelated local changes, and conflicting content remain preserved
+for explicit reconciliation. Recovery never resets, force-pushes, or reruns an
+AI task. Claim/worker operational-state reconciliation is still a separate gate;
+this command does not authorize service restart or clear uncertain ownership.

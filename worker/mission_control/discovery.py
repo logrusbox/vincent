@@ -29,6 +29,9 @@ class GitTaskSource:
         return result
 
     def synchronize(self) -> str:
+        git_dir = Path(self._git("rev-parse", "--absolute-git-dir").stdout.strip())
+        if (git_dir / "vincent-task-publication.json").exists():
+            raise DiscoveryError("pending task publication; run recover-publication before synchronization")
         if self._git("status", "--porcelain=v1", "--untracked-files=all").stdout.strip():
             raise DiscoveryError("coordination checkout is dirty")
         current = self._git("symbolic-ref", "--short", "HEAD").stdout.strip()
