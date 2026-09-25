@@ -105,3 +105,29 @@ configuration are later explicit steps. The legacy online
 its mutable Codex installer remains under review in #42. Use the documented
 administrative recovery path for privileged maintenance; do not give task
 processes unrestricted sudo. Physical acceptance remains required.
+
+
+## Optional reviewed provider provisioning
+
+Standalone READY does not install or authorize Codex. The legacy optional
+`bootstrap/provision-worker-baseline.sh` now requires `VINCENT_CODEX_MANIFEST`
+pointing to a root-owned manifest under root-owned, non-writable parent directories.
+It never downloads or executes a mutable provider installation script.
+
+The manifest has `schema_version: 1`, `provider: "codex"`, an exact numeric
+`version` such as `0.156.0`, and `artifacts` entries for both `codex` and
+`codex-code-mode-host`. Each entry supplies an absolute local `path` and a
+64-character lowercase expected `sha256`. These are reviewed inputs: independently
+verify publisher/source/version and obtain expected digests before installation.
+Do not treat a digest computed from an untrusted download as publisher verification.
+No approved provider binary or expected digest is bundled in this repository yet.
+
+`python3 bootstrap/install-provider.py /etc/vincent/provider-manifest.json`
+checks both staged artifacts before activating the complete runtime through one
+atomic `bin` symlink. Existing releases are retained. A checksum failure preserves
+the active runtime. Existing legacy installations with a real `bin` directory
+require operator migration; the installer will not overwrite that directory.
+Use a fresh root-owned destination for staging and inspect it before switching.
+Provider authentication remains a separate operator action; this does not grant
+repository scope or enable the worker service. Installation does not claim task
+credential isolation (#48).

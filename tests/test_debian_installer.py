@@ -205,13 +205,12 @@ class DebianInstallerTests(unittest.TestCase):
         self.assertIn("network-manager", bootstrap)
         self.assertIn("bubblewrap", bootstrap)
 
-    def test_codex_installer_executes_from_service_owned_cache(self):
+    def test_provider_installation_requires_reviewed_local_artifacts(self):
         bootstrap = (ROOT / "bootstrap/provision-worker-baseline.sh").read_text()
-        self.assertIn('codex_installer=$service_cache/codex-install.sh', bootstrap)
-        self.assertIn('chown "$service_user:$service_user" "$codex_installer"', bootstrap)
-        self.assertIn('chmod 0700 "$codex_installer"', bootstrap)
-        self.assertNotIn('codex_installer=$status_root/codex-install.sh', bootstrap)
-        self.assertIn('sha256sum "$codex_installer" >"$status_root/codex-install.sh.sha256"', bootstrap)
+        self.assertIn('VINCENT_CODEX_MANIFEST:?', bootstrap)
+        self.assertIn('install-provider.py', bootstrap)
+        self.assertNotIn('chatgpt.com/codex/install.sh', bootstrap)
+        self.assertNotIn('hello-world:latest', bootstrap)
 
     def test_codex_companion_runtime_is_preserved(self):
         bootstrap = (ROOT / "bootstrap/provision-worker-baseline.sh").read_text()
