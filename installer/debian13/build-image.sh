@@ -10,7 +10,8 @@ source_iso=${1:-}
 
 build_number=$(tr -d '\r\n' <"$script_root/BUILD_NUMBER")
 printf '%s\n' "$build_number" | grep -Eq '^[0-9]{4}(\.[0-9]+)?$' || { echo "invalid BUILD_NUMBER" >&2; exit 2; }
-output_iso=${2:-$repository_root/dist/vincent-debian-${DEBIAN_VERSION}-${DEBIAN_ARCH}-build-${build_number}.iso}
+installer_version=$(tr -d '\r\n' <"$script_root/VERSION")
+output_iso=${2:-$repository_root/dist/vincent-${installer_version}-debian-${DEBIAN_VERSION}-${DEBIAN_ARCH}-build-${build_number}.iso}
 case "$(basename -- "$output_iso")" in *"build-${build_number}"*) ;; *) echo "output filename must contain build-${build_number}" >&2; exit 2;; esac
 [ ! -e "$output_iso" ] || { echo "refusing to overwrite or append to existing output: $output_iso" >&2; exit 3; }
 
@@ -39,6 +40,7 @@ with (root / "platform.tar.gz").open("rb") as stream:
     digest = hashlib.file_digest(stream, "sha256").hexdigest()
 (root / "payload-manifest.json").write_text(json.dumps({
     "schema_version": 1, "platform_commit": commit, "installer_build": build,
+    "installer_version": (source / "installer/debian13/VERSION").read_text().strip(),
     "runtime_version": (source / "VERSION").read_text().strip(),
     "runtime_build": (source / "BUILD_NUMBER").read_text().strip(), "sha256": digest,
 }, sort_keys=True, indent=2) + "\n")
@@ -127,9 +129,9 @@ cmp -s "$work_root/source-disk-info" "$work_root/output-disk-info" || { echo "ge
 
 sha256=$(sha256sum "$output_iso" | awk '{print $1}')
 manifest="$output_iso.manifest.json"
-python3 - "$manifest" "$source_iso" "$output_iso" "$DEBIAN_VERSION" "$DEBIAN_ARCH" "$commit" "$sha256" "$build_number" "$volume_id" "$offline_bundle_sha256" "$offline_package_count" <<'PY'
+python3 - "$manifest" "$source_iso" "$output_iso" "$DEBIAN_VERSION" "$DEBIAN_ARCH" "$commit" "$sha256" "$build_number" "$volume_id" "$offline_bundle_sha256" "$offline_package_count" "$repository_root" <<'PY'
 import hashlib, json, pathlib, sys
-manifest, source_iso, output_iso, debian_version, architecture, commit, output_sha256, build, volume_id, offline_sha256, offline_count = sys.argv[1:]
+manifest, source_iso, output_iso, debian_version, architecture, commit, output_sha256, build, volume_id, offline_sha256, offline_count, repository_root = sys.argv[1:]
 def sha256(path):
     h=hashlib.sha256()
     with open(path,"rb") as f:
@@ -140,6 +142,10 @@ payload={
     "debian_version":debian_version,
     "architecture":architecture,
     "build_number":build,
+    "installer_version":(pathlib.Path(repository_root)/"installer/debian13/VERSION").read_text().strip(),
+    "installer_build":build,
+    "runtime_version":(pathlib.Path(repository_root)/"VERSION").read_text().strip(),
+    "runtime_build":(pathlib.Path(repository_root)/"BUILD_NUMBER").read_text().strip(),
     "volume_id":volume_id,
     "source_iso":pathlib.Path(source_iso).name,
     "source_sha256":sha256(source_iso),

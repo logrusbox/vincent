@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import shutil
 import sys
+from .versioning import version_info
 
 IDENTITY_ROOT = Path('/var/lib/vincent/identity')
 READY_RECORD = Path('/var/lib/vincent/ready.json')
@@ -24,6 +25,7 @@ def local_status(identity_root: Path = IDENTITY_ROOT, ready_record: Path = READY
               and ready.get('worker_id') == identity['worker_id'])
     return {
         'schema_version': 1, 'worker_id': identity['worker_id'],
+        'versions': version_info(),
         'local_state': 'READY' if passed else 'SETUP_REQUIRED',
         'last_local_self_test': ready.get('verified_at'),
         'provider_available': shutil.which('codex') is not None,
@@ -34,9 +36,13 @@ def local_status(identity_root: Path = IDENTITY_ROOT, ready_record: Path = READY
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog='vincent')
-    parser.add_argument('command', choices=('status', 'enroll'), nargs='?', default='status')
+    parser.add_argument('--version', action='store_true')
+    parser.add_argument('command', choices=('status', 'enroll', 'version'), nargs='?', default='status')
     arguments = parser.parse_args(argv)
     try:
+        if arguments.version or arguments.command == 'version':
+            print(json.dumps(version_info(), sort_keys=True, indent=2))
+            return 0
         if arguments.command == 'enroll':
             from .enrollment import request_enrollment
             print(request_enrollment(IDENTITY_ROOT).to_json(), end='')

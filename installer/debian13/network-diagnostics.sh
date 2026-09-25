@@ -42,13 +42,12 @@ http_probe() {
         getent ahostsv4 "$host" 2>/dev/null | awk 'NR==1 {print $1; found=1} END {if (!found) print "FAIL"}'
     done
     echo
-    echo "===== REQUIRED ENDPOINTS ====="
+    echo "===== OPTIONAL CONNECTIVITY ENDPOINTS ====="
     http_probe "debian-index" "https://deb.debian.org/debian/dists/trixie/InRelease"
-    http_probe "codex-installer" "https://chatgpt.com/codex/install.sh"
-    if git ls-remote https://github.com/Gordonfive/vincent.git HEAD >/dev/null 2>&1; then
-        echo "vincent-git        PASS             https://github.com/Gordonfive/vincent.git"
+    if git ls-remote https://github.com/logrusbox/vincent.git HEAD >/dev/null 2>&1; then
+        echo "vincent-git        PASS             https://github.com/logrusbox/vincent.git"
     else
-        echo "vincent-git        FAIL             https://github.com/Gordonfive/vincent.git"
+        echo "vincent-git        FAIL             https://github.com/logrusbox/vincent.git"
     fi
     echo
     echo "===== DEBIAN PACKAGE VISIBILITY ====="

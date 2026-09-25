@@ -140,10 +140,10 @@ class DebianInstallerTests(unittest.TestCase):
         self.assertNotIn("vincent-network-diagnostics", console)
         self.assertIn("Alt+F4: diagnostics", console)
         self.assertIn("deb.debian.org/debian/dists/trixie/InRelease", diagnostics)
-        self.assertIn("chatgpt.com/codex/install.sh", diagnostics)
+        self.assertNotIn("chatgpt.com/codex/install.sh", diagnostics)
         self.assertNotIn("download.docker.com", diagnostics)
         self.assertIn("podman", diagnostics)
-        self.assertIn("git ls-remote https://github.com/Gordonfive/vincent.git HEAD", diagnostics)
+        self.assertIn("git ls-remote https://github.com/logrusbox/vincent.git HEAD", diagnostics)
         self.assertIn("DEBIAN PACKAGE VISIBILITY", diagnostics)
         self.assertIn("TTYPath=/dev/tty3", unit)
 

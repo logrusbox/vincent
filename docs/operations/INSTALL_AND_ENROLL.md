@@ -131,3 +131,18 @@ Use a fresh root-owned destination for staging and inspect it before switching.
 Provider authentication remains a separate operator action; this does not grant
 repository scope or enable the worker service. Installation does not claim task
 credential isolation (#48).
+
+
+## Version and build evidence
+
+`vincent version` or `vincent --version` reports the installed runtime SemVer and
+build embedded in its wheel, independently of installer provenance. `vincent status`
+includes the same structured identities. Installer metadata retains its own version,
+build, source commit and original runtime identity; runtime updates must not rewrite
+that immutable record. ISO filenames and manifests identify installer SemVer/build,
+and the manifest also identifies the embedded runtime SemVer/build. A source checkout
+uses the canonical root files; package version is derived from `VERSION` at build time.
+
+Scheduled diagnostics distinguish required local checks from optional internet,
+provider and enrollment observations. Missing optional dependencies do not make a
+standalone worker unhealthy or imply authority to enroll/execute.
