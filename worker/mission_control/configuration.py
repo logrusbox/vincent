@@ -26,6 +26,9 @@ class WorkerConfiguration:
     git_author_email: str = "worker@localhost.invalid"
     poll_seconds: int = 60
     provider_timeout_seconds: int | None = None
+    authority_mode: str = "unconfigured"
+    authorized_repositories: tuple[str, ...] = ()
+    authorization_file: Path | None = None
 
     @classmethod
     def load(cls, path: Path) -> "WorkerConfiguration":
@@ -69,4 +72,16 @@ class WorkerConfiguration:
         timeout = provider.get("execution_timeout_seconds")
         if timeout is not None and (type(timeout) is not int or timeout <= 0):
             raise ConfigurationError("provider.execution_timeout_seconds must be a positive integer")
-        return cls(worker_id, state_file, workspace_root, coordination_checkout, identity_file, frozenset(capabilities), branch, tasks_path, author_name, author_email, poll, timeout)
+        authority = data.get("authorization", {})
+        if not isinstance(authority, dict):
+            raise ConfigurationError("authorization must be a table")
+        mode = authority.get("mode", "unconfigured")
+        if mode not in ("unconfigured", "standalone", "managed"):
+            raise ConfigurationError("unsupported authorization mode")
+        repositories = authority.get("repositories", [])
+        if not isinstance(repositories, list) or any(not isinstance(item, str) for item in repositories):
+            raise ConfigurationError("authorization repositories must be exact repository strings")
+        grant = authority.get("grant_path")
+        if grant is not None and (not isinstance(grant, str) or not Path(grant).is_absolute()):
+            raise ConfigurationError("managed grant path must be absolute")
+        return cls(worker_id, state_file, workspace_root, coordination_checkout, identity_file, frozenset(capabilities), branch, tasks_path, author_name, author_email, poll, timeout, mode, tuple(repositories), Path(grant) if grant else None)

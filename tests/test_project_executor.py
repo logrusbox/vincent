@@ -2,8 +2,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
+from mission_control.authorization import AuthorizationError, ExecutionAuthority
 from mission_control.codex_runner import CodexResult
 from mission_control.execution import ExecutionStatus
 from mission_control.models import Task
@@ -55,7 +57,7 @@ class ProjectExecutorTests(unittest.TestCase):
 
     def test_validates_commits_pushes_and_verifies_project_work(self):
         task = self.task(["result.txt"])
-        factory = ProjectExecutorFactory("worker-1", WorkspaceManager(self.root / "worktrees"), WritingRunner())
+        factory = ProjectExecutorFactory("worker-1", WorkspaceManager(self.root / "worktrees"), WritingRunner(), authority=ExecutionAuthority("worker-1", "standalone", (str(self.remote),)))
         executor = factory(task)
         git(executor.prepared.path, "config", "user.name", "Worker")
         git(executor.prepared.path, "config", "user.email", "worker@example.invalid")
@@ -63,9 +65,21 @@ class ProjectExecutorTests(unittest.TestCase):
         self.assertEqual(outcome.status, ExecutionStatus.SUCCESS)
         self.assertEqual(executor.publication.ending_commit, executor.publication.remote_commit)
 
+    def test_revocation_after_execution_preserves_unpublished_work(self):
+        task = self.task(["result.txt"])
+        authority = ExecutionAuthority("worker-1", "standalone", (str(self.remote),))
+        factory = ProjectExecutorFactory("worker-1", WorkspaceManager(self.root / "worktrees"), WritingRunner(), authority=authority)
+        with patch.object(ExecutionAuthority, 'require', side_effect=[None, None, AuthorizationError('revoked')]):
+            executor = factory(task)
+            outcome = executor.execute(task)
+        self.assertEqual(outcome.status, ExecutionStatus.BLOCKED)
+        self.assertIn('revoked', outcome.reason)
+        self.assertIsNone(executor.publication)
+        self.assertTrue((executor.prepared.path / 'result.txt').exists())
+
     def test_changes_without_explicit_publish_contract_block(self):
         task = self.task()
-        factory = ProjectExecutorFactory("worker-1", WorkspaceManager(self.root / "worktrees"), WritingRunner())
+        factory = ProjectExecutorFactory("worker-1", WorkspaceManager(self.root / "worktrees"), WritingRunner(), authority=ExecutionAuthority("worker-1", "standalone", (str(self.remote),)))
         executor = factory(task)
         outcome = executor.execute(task)
         self.assertEqual(outcome.status, ExecutionStatus.BLOCKED)
