@@ -8,7 +8,6 @@ expected_commit_file=/opt/vincent-installer/expected-commit
 build_number_file=/opt/vincent-installer/build-number
 source_root=/opt/vincent/source
 self_test=/usr/local/sbin/vincent-self-test
-repository_url=https://github.com/Gordonfive/vincent.git
 network_attempts=20
 network_delay=15
 
@@ -86,6 +85,16 @@ text=re.sub(r"^127\.0\.1\.1\s+.*$",line,text,flags=re.MULTILINE) if re.search(r"
 path.write_text(text)
 PY
 
+
+write_status BOOTSTRAPPING payload "verifying embedded Vincent payload"
+python3 /opt/vincent-installer/payload.py \
+    /opt/vincent-installer/platform.tar.gz /opt/vincent-installer/payload-manifest.json \
+    "$expected_commit" "$build_number" --destination "$source_root"
+write_status BOOTSTRAPPING platform "installing Vincent from verified embedded payload"
+VINCENT_RESUME_IDENTITY=$resume_identity sh "$source_root/installer/install.sh" "$source_root"
+printf '%s\n' "$expected_commit" >/var/lib/vincent-install/installed-commit
+chmod 0600 /var/lib/vincent-install/installed-commit
+
 attempt=1
 while [ "$attempt" -le "$network_attempts" ]; do
     write_status BOOTSTRAPPING network "waiting for route, DNS and HTTPS to GitHub" "$attempt" "$network_attempts"
@@ -98,26 +107,6 @@ while [ "$attempt" -le "$network_attempts" ]; do
     [ "$attempt" -lt "$network_attempts" ] || { write_status FAILED network "network did not become ready" "$attempt" "$network_attempts"; exit 1; }
     sleep "$network_delay"; attempt=$((attempt+1))
 done
-
-rm -rf "$source_root"
-install -d -m 0755 "$source_root"
-write_status BOOTSTRAPPING git "fetching exact Vincent commit $expected_commit"
-git -C "$source_root" init -q
-git -C "$source_root" remote add origin "$repository_url"
-attempt=1
-while [ "$attempt" -le 5 ]; do
-    if git -C "$source_root" fetch --no-tags --depth=1 origin "$expected_commit"; then break; fi
-    [ "$attempt" -lt 5 ] || { write_status FAILED git "Git fetch failed after 5 attempts" "$attempt" 5; exit 1; }
-    sleep 15; attempt=$((attempt+1))
-done
-fetched=$(git -C "$source_root" rev-parse FETCH_HEAD)
-[ "$fetched" = "$expected_commit" ] || { write_status FAILED git "fetched commit mismatch"; exit 1; }
-git -C "$source_root" checkout -q --detach "$expected_commit"
-printf '%s\n' "$expected_commit" >/var/lib/vincent-install/installed-commit
-chmod 0600 /var/lib/vincent-install/installed-commit
-
-write_status BOOTSTRAPPING platform "installing Vincent build $build_number from verified Git commit"
-VINCENT_RESUME_IDENTITY=$resume_identity sh "$source_root/installer/install.sh" "$source_root"
 
 write_status BOOTSTRAPPING toolchain "installing and validating worker toolchain"
 sh "$source_root/bootstrap/provision-worker-baseline.sh"

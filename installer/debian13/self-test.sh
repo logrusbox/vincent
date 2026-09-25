@@ -66,13 +66,13 @@ build_path = Path("/etc/vincent/build-number")
 try:
     expected = expected_path.read_text().strip()
     installed = installed_path.read_text().strip()
-    head = subprocess.run(["git", "-C", str(source_root), "rev-parse", "HEAD"], text=True, capture_output=True, check=True).stdout.strip()
-    remote = subprocess.run(["git", "-C", str(source_root), "remote", "get-url", "origin"], text=True, capture_output=True, check=True).stdout.strip()
-    record("git_exact_commit", bool(expected and expected == installed == head), f"expected={expected} installed={installed} head={head}")
-    record("git_public_remote", remote == "https://github.com/Gordonfive/vincent.git", remote)
+    metadata = json.loads(Path("/opt/vincent-installer/payload-manifest.json").read_text())
+    record("payload_exact_commit", bool(expected and expected == installed == metadata["platform_commit"]), f"expected={expected} installed={installed}")
+    run("payload_integrity", ["python3", "/opt/vincent-installer/payload.py",
+        "/opt/vincent-installer/platform.tar.gz", "/opt/vincent-installer/payload-manifest.json",
+        expected, build_path.read_text().strip()])
 except Exception as exc:
-    record("git_exact_commit", False, repr(exc))
-    record("git_public_remote", False, repr(exc))
+    record("payload_exact_commit", False, repr(exc))
 
 try:
     build = build_path.read_text().strip()
