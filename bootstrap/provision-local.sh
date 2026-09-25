@@ -32,3 +32,8 @@ if ! grep -q "^${service_user}:" /etc/subgid; then
 fi
 systemctl enable --now NetworkManager
 systemctl start vincent-container-namespace.service
+
+# Deterministic rootfs from Debian's authenticated static BusyBox package.
+# No registry, image download, project credentials or network is required.
+install -d -o root -g root -m 0755 /opt/vincent/container-self-test/bin
+install -o root -g root -m 0755 /usr/bin/busybox /opt/vincent/container-self-test/bin/busybox

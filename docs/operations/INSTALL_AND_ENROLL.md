@@ -146,3 +146,10 @@ uses the canonical root files; package version is derived from `VERSION` at buil
 Scheduled diagnostics distinguish required local checks from optional internet,
 provider and enrollment observations. Missing optional dependencies do not make a
 standalone worker unhealthy or imply authority to enroll/execute.
+
+
+The local container self-test runs Debian's authenticated `busybox-static` binary
+inside a read-only root filesystem with `podman run --rootfs`, `--pull=never` and
+`--network=none`, under the `vincent` account. It proves actual container execution
+without Docker Hub. This remains a local runtime check; it does not prove isolation
+of provider tasks from Vincent identity material (#48).

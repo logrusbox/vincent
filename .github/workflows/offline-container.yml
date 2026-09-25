@@ -1,0 +1,30 @@
+name: Offline container proof
+on:
+  push:
+    paths:
+      - 'bootstrap/provision-local.sh'
+      - 'installer/debian13/self-test.sh'
+      - '.github/workflows/offline-container.yml'
+  pull_request:
+    paths:
+      - 'bootstrap/provision-local.sh'
+      - 'installer/debian13/self-test.sh'
+      - '.github/workflows/offline-container.yml'
+permissions:
+  contents: read
+jobs:
+  rootless-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install verified distribution tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman uidmap slirp4netns fuse-overlayfs busybox-static
+      - name: Execute without a registry under the unprivileged runner
+        run: |
+          mkdir -p "$RUNNER_TEMP/vincent-rootfs/bin"
+          cp /usr/bin/busybox "$RUNNER_TEMP/vincent-rootfs/bin/busybox"
+          test "$(podman info --format '{{.Host.Security.Rootless}}')" = true
+          podman run --rm --pull=never --network=none --read-only --rootfs "$RUNNER_TEMP/vincent-rootfs" /bin/busybox true
