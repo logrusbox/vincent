@@ -30,6 +30,19 @@ class TaskModelTests(unittest.TestCase):
         self.assertEqual(task.publish_paths, ("worker/",))
         self.assertEqual(task.to_mapping()["validation_commands"], [["python3", "-m", "unittest"]])
 
+    def test_rejects_unknown_priority_and_invalid_time(self):
+        for priority in ("urgent", "normal", "HIGH ", "", 1):
+            with self.subTest(priority=priority), self.assertRaises(ProtocolError):
+                Task.from_mapping(valid_task(priority=priority))
+        for created in ("yesterday", "2026-02-30T00:00:00Z", "2026-01-01T00:00:00",
+                        "2026-01-01T00:00:00+01:00", "2026-01-01T00:00:60Z",
+                        "2026-01-01T00:00:00.1234567Z"):
+            with self.subTest(created=created), self.assertRaises(ProtocolError):
+                Task.from_mapping(valid_task(created_at=created))
+        for version in (True, 1.0):
+            with self.assertRaises(ProtocolError):
+                Task.from_mapping(valid_task(schema_version=version))
+
     def test_parses_valid_task(self):
         task = Task.from_mapping(valid_task())
         self.assertIs(task.state, TaskState.QUEUED)

@@ -7,7 +7,7 @@ from mission_control.models import Task
 
 
 def task(state="COMPLETED"):
-    return Task.from_mapping({"schema_version": 1, "task_id": "MCP-1201", "project_id": "platform", "repository": "owner/repo", "base_branch": "main", "objective": "Report", "acceptance_criteria": ["report exists"], "state": state, "revision": 4, "created_at": "now", "claim_worker_id": "worker-1", "claim_nonce": "nonce"})
+    return Task.from_mapping({"schema_version": 1, "task_id": "MCP-1201", "project_id": "platform", "repository": "owner/repo", "base_branch": "main", "objective": "Report", "acceptance_criteria": ["report exists"], "state": state, "revision": 4, "created_at": "2026-09-25T00:00:00Z", "claim_worker_id": "worker-1", "claim_nonce": "nonce"})
 
 
 class FakePublisher:
